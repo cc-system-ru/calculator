@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Коммерческая активность агента</title>
+<style>
+  :root {
+    --green: #2e7d32;
+    --green-bg: #e8f5e9;
+    --yellow: #f9a825;
+    --yellow-bg: #fff8e1;
+    --red: #c62828;
+    --red-bg: #ffebee;
+    --dark: #1a1a2e;
+    --gray: #6b7280;
+    --light: #f4f5f7;
+    --border: #e0e0e0;
+    --white: #ffffff;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: var(--light);
+    color: var(--dark);
+    line-height: 1.5;
+    padding: 16px;
+  }
+
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  /* ── Header ── */
+  .header {
+    background: var(--dark);
+    color: var(--white);
+    padding: 24px 20px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+  }
+  .header h1 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .header p {
+    font-size: 13px;
+    color: #b0b3c5;
+  }
+
+  /* ── Score panel ── */
+  .score-panel {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 24px 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    text-align: center;
+    transition: border-color .3s;
+    border: 2px solid transparent;
+  }
+  .score-panel.level-green  { border-color: var(--green);  background: var(--green-bg); }
+  .score-panel.level-yellow { border-color: var(--yellow); background: var(--yellow-bg); }
+  .score-panel.level-red    { border-color: var(--red);    background: var(--red-bg); }
+
+  .score-value {
+    font-size: 56px;
+    font-weight: 800;
+    line-height: 1;
+    transition: color .3s;
+  }
+  .score-panel.level-green  .score-value { color: var(--green); }
+  .score-panel.level-yellow .score-value { color: var(--yellow); }
+  .score-panel.level-red    .score-value { color: var(--red); }
+
+  .score-label {
+    font-size: 13px;
+    color: var(--gray);
+    margin-top: 4px;
+  }
+
+  .score-percent {
+    font-size: 15px;
+    font-weight: 600;
+    margin-top: 8px;
+  }
+  .score-panel.level-green  .score-percent { color: var(--green); }
+  .score-panel.level-yellow .score-percent { color: var(--yellow); }
+  .score-panel.level-red    .score-percent { color: var(--red); }
+
+  .level-badge {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 4px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--white);
+  }
+  .score-panel.level-green  .level-badge { background: var(--green); }
+  .score-panel.level-yellow .level-badge { background: var(--yellow); }
+  .score-panel.level-red    .level-badge { background: var(--red); }
+
+  /* ── Progress bar ── */
+  .progress-wrap {
+    margin-top: 16px;
+  }
+  .progress-bar {
+    height: 14px;
+    background: #e0e0e0;
+    border-radius: 7px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 7px;
+    transition: width .4s ease, background .3s;
+    width: 0%;
+  }
+  .progress-fill.green  { background: var(--green); }
+  .progress-fill.yellow { background: var(--yellow); }
+  .progress-fill.red    { background: var(--red); }
+
+  .progress-marks {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--gray);
+    margin-top: 4px;
+  }
+
+  /* ── Sections ── */
+  .section {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  }
+  .section h2 {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--light);
+  }
+  .section h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gray);
+    margin: 14px 0 8px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+  }
+
+  /* ── Input rows ── */
+  .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--light);
+    gap: 8px;
+  }
+  .row:last-child { border-bottom: none; }
+
+  .row-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .row-name {
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .row-pts {
+    font-size: 12px;
+    color: var(--gray);
+  }
+
+  .row-input {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .row-input input[type="number"] {
+    width: 56px;
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 15px;
+    text-align: center;
+    outline: none;
+    transition: border-color .2s;
+    -moz-appearance: textfield;
+  }
+  .row-input input[type="number"]::-webkit-outer-spin-button,
+  .row-input input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  .row-input input:focus {
+    border-color: var(--dark);
+  }
+
+  .row-subtotal {
+    width: 48px;
+    text-align: right;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--dark);
+    flex-shrink: 0;
+  }
+
+  /* ── Stepper buttons ── */
+  .stepper {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .stepper button {
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--border);
+    background: var(--white);
+    border-radius: 8px;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--dark);
+    transition: background .15s;
+    flex-shrink: 0;
+  }
+  .stepper button:active { background: var(--light); }
+
+  /* ── Reset button ── */
+  .btn-reset {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    background: var(--dark);
+    color: var(--white);
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity .2s;
+    margin-bottom: 16px;
+  }
+  .btn-reset:active { opacity: .8; }
+
+  /* ── Reference tables ── */
+  .ref-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+  .ref-table th {
+    text-align: left;
+    padding: 6px 8px;
+    background: var(--light);
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--gray);
+  }
+  .ref-table td {
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--light);
+  }
+  .ref-table td:last-child {
+    text-align: right;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  /* ── Scale legend ── */
+  .scale-legend {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+  .scale-item {
+    flex: 1;
+    min-width: 100px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+  }
+  .scale-item.sg { background: var(--green-bg); color: var(--green); }
+  .scale-item.sy { background: var(--yellow-bg); color: var(--yellow); }
+  .scale-item.sr { background: var(--red-bg); color: var(--red); }
+
+  .note {
+    font-size: 12px;
+    color: var(--gray);
+    margin-top: 8px;
+    line-height: 1.6;
+  }
+
+  /* ── Mobile ── */
+  @media (max-width: 480px) {
+    body { padding: 10px; }
+    .header { padding: 18px 16px; }
+    .header h1 { font-size: 17px; }
+    .score-value { font-size: 44px; }
+    .section { padding: 16px; }
+    .row { flex-wrap: wrap; }
+    .row-info { min-width: 100%; margin-bottom: 4px; }
+    .row-input { width: 100%; justify-content: space-between; }
+    .row-subtotal { width: auto; }
+    .stepper button { width: 36px; height: 36px; }
+    .row-input input[type="number"] { width: 64px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>Коммерческая активность агента</h1>
+    <p>Норма: 150 баллов / неделя (5 рабочих дней). Рейтинг обновляется каждый понедельник.</p>
+  </div>
+
+  <!-- Score panel -->
+  <div class="score-panel level-red" id="scorePanel">
+    <div class="score-value" id="scoreValue">0</div>
+    <div class="score-label">баллов за неделю</div>
+    <div class="score-percent" id="scorePercent">0% от нормы</div>
+    <div class="level-badge" id="levelBadge">Низкий уровень</div>
+
+    <div class="progress-wrap">
+      <div class="progress-bar">
+        <div class="progress-fill red" id="progressFill"></div>
+      </div>
+      <div class="progress-marks">
+        <span>0</span>
+        <span>70</span>
+        <span>150</span>
+        <span>200+</span>
+      </div>
+    </div>
+
+    <div class="scale-legend">
+      <div class="scale-item sg">Зелёный: 150+</div>
+      <div class="scale-item sy">Жёлтый: 70–149</div>
+      <div class="scale-item sr">Красный: &lt; 70</div>
+    </div>
+  </div>
+
+  <!-- Calculator: CRM (auto) -->
+  <div class="section">
+    <h2>Сделки (CRM считает автоматически)</h2>
+
+    <div class="row" data-pts="25">
+      <div class="row-info">
+        <div class="row-name">Встреча проведена</div>
+        <div class="row-pts">25 баллов / шт.</div>
+      </div>
+      <div class="row-input">
+        <div class="stepper">
+          <button type="button" onclick="step(this,-1)">−</button>
+          <input type="number" min="0" value="0" oninput="calc()">
+          <button type="button" onclick="step(this,1)">+</button>
+        </div>
+        <div class="row-subtotal">0</div>
+      </div>
+    </div>
+
+    <div class="row" data-pts="50">
+      <div class="row-info">
+        <div class="row-name">Задаток / Бронь</div>
+        <div class="row-pts">50 баллов / шт.</div>
+      </div>
+      <div class="row-input">
+        <div class="stepper">
+          <button type="button" onclick="step(this,-1)">−</button>
+          <input type="number" min="0" value="0" oninput="calc()">
+          <button type="button" onclick="step(this,1)">+</button>
+        </div>
+        <div class="row-subtotal">0</div>
+      </div>
+    </div>
+
+    <div class="row" data-pts="75">
+      <div class="row-info">
+        <div class="row-name">Договор подписан</div>
+        <div class="row-pts">75 баллов / шт.</div>
+      </div>
+      <div class="row-input">
+        <div class="stepper">
+          <button type="button" onclick="step(this,-1)">−</button>
+          <input type="number" min="0" value="0" oninput="calc()">
+          <button type="button" onclick="step(this,1)">+</button>
+        </div>
+        <div class="row-subtotal">0</div>
+      </div>
+    </div>
+
+    <div class="row" data-pts="100">
+      <div class="row-info">
+        <div class="row-name">Сделка закрыта (успешно)</div>
+        <div class="row-pts">100 баллов / шт.</div>
+      </div>
+      <div class="row-input">
+        <div class="stepper">
+          <button type="button" onclick="step(this,-1)">−</button>
+          <input type="number" min="0" value="0" oninput="calc()">
+          <button type="button" onclick="step(this,1)">+</button>
+        </div>
+        <div class="row-subtotal">0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Calculator: Manual (ROP) -->
+  <div class="section">
+    <h2>Дополнительные действия (вносит РОП)</h2>
+
+    <div class="row" data-pts="5">
+      <div class="row-info">
+        <div class="row-name">Баннер (наклейка на объект)</div>
+        <div class="row-pts">5 баллов / шт.</div>
+      </div>
+      <div class="row-input">
+        <div class="stepper">
+          <button type="button" onclick="step(this,-1)">−</button>
+          <input type="number" min="0" value="0" oninput="calc()">
+          <button type="button" onclick="step(this,1)">+</button>
+        </div>
+        <div class="row-subtotal">0</div>
+      </div>
+    </div>
+
+    <div class="row" data-pts="15">
+      <div class="row-info">
+        <div class="row-name">Эксклюзивный договор заключён</div>
+        <div class="row-pts">15 баллов / шт.</div>
+      </div>
+      <div class="row-input">
+        <div class="stepper">
+          <button type="button" onclick="step(this,-1)">−</button>
+          <input type="number" min="0" value="0" oninput="calc()">
+          <button type="button" onclick="step(this,1)">+</button>
+        </div>
+        <div class="row-subtotal">0</div>
+      </div>
+    </div>
+
+    <div class="row" data-pts="10">
+      <div class="row-info">
+        <div class="row-name">Снижение цены по эксклюзиву</div>
+        <div class="row-pts">10 баллов / шт.</div>
+      </div>
+      <div class="row-input">
+        <div class="stepper">
+          <button type="button" onclick="step(this,-1)">−</button>
+          <input type="number" min="0" value="0" oninput="calc()">
+          <button type="button" onclick="step(this,1)">+</button>
+        </div>
+        <div class="row-subtotal">0</div>
+      </div>
+    </div>
+
+    <div class="row" data-pts="10">
+      <div class="row-info">
+        <div class="row-name">Онлайн-презентация Черноморского побережья</div>
+        <div class="row-pts">10 баллов / шт.</div>
+      </div>
+      <div class="row-input">
+        <div class="stepper">
+          <button type="button" onclick="step(this,-1)">−</button>
+          <input type="number" min="0" value="0" oninput="calc()">
+          <button type="button" onclick="step(this,1)">+</button>
+        </div>
+        <div class="row-subtotal">0</div>
+      </div>
+    </div>
+
+    <div class="row" data-pts="10">
+      <div class="row-info">
+        <div class="row-name">Отзыв (2GIS / Яндекс)</div>
+        <div class="row-pts">10 баллов / шт.</div>
+      </div>
+      <div class="row-input">
+        <div class="stepper">
+          <button type="button" onclick="step(this,-1)">−</button>
+          <input type="number" min="0" value="0" oninput="calc()">
+          <button type="button" onclick="step(this,1)">+</button>
+        </div>
+        <div class="row-subtotal">0</div>
+      </div>
+    </div>
+
+    <div class="row" data-pts="10">
+      <div class="row-info">
+        <div class="row-name">Выездная презентация (брокер-тур)</div>
+        <div class="row-pts">10 баллов / шт.</div>
+      </div>
+      <div class="row-input">
+        <div class="stepper">
+          <button type="button" onclick="step(this,-1)">−</button>
+          <input type="number" min="0" value="0" oninput="calc()">
+          <button type="button" onclick="step(this,1)">+</button>
+        </div>
+        <div class="row-subtotal">0</div>
+      </div>
+    </div>
+
+    <div class="row" data-pts="5">
+      <div class="row-info">
+        <div class="row-name">Публикация статуса в соцсетях</div>
+        <div class="row-pts">5 баллов / шт.</div>
+      </div>
+      <div class="row-input">
+        <div class="stepper">
+          <button type="button" onclick="step(this,-1)">−</button>
+          <input type="number" min="0" value="0" oninput="calc()">
+          <button type="button" onclick="step(this,1)">+</button>
+        </div>
+        <div class="row-subtotal">0</div>
+      </div>
+    </div>
+
+    <div class="row" data-pts="75">
+      <div class="row-info">
+        <div class="row-name">Реферал (сделка состоялась)</div>
+        <div class="row-pts">75 баллов / шт.</div>
+      </div>
+      <div class="row-input">
+        <div class="stepper">
+          <button type="button" onclick="step(this,-1)">−</button>
+          <input type="number" min="0" value="0" oninput="calc()">
+          <button type="button" onclick="step(this,1)">+</button>
+        </div>
+        <div class="row-subtotal">0</div>
+      </div>
+    </div>
+
+    <div class="row" data-pts="100">
+      <div class="row-info">
+        <div class="row-name">Привлечение сотрудника в компанию</div>
+        <div class="row-pts">100 баллов / шт.</div>
+      </div>
+      <div class="row-input">
+        <div class="stepper">
+          <button type="button" onclick="step(this,-1)">−</button>
+          <input type="number" min="0" value="0" oninput="calc()">
+          <button type="button" onclick="step(this,1)">+</button>
+        </div>
+        <div class="row-subtotal">0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reset -->
+  <button class="btn-reset" onclick="resetAll()">Сбросить</button>
+
+  <!-- Reference -->
+  <div class="section">
+    <h2>Справка: как работает система</h2>
+    <p class="note">
+      1. В течение недели агент двигает сделки и выполняет дополнительные действия.<br>
+      2. В понедельник система суммирует баллы за прошлую неделю.<br>
+      3. Определяется уровень: зелёный (150+), жёлтый (70–149), красный (&lt; 70).<br>
+      4. Баллы начисляются один раз за этап. Если сделка сорвалась — баллы не сгорают.<br>
+      5. Баллы за дополнительные действия вносит РОП после проверки.
+    </p>
+  </div>
+
+</div>
+
+<script>
+  const NORM = 150;
+
+  function step(btn, dir) {
+    const input = btn.parentElement.querySelector('input');
+    let v = parseInt(input.value) || 0;
+    v = Math.max(0, v + dir);
+    input.value = v;
+    calc();
+  }
+
+  function calc() {
+    let total = 0;
+    document.querySelectorAll('.row').forEach(row => {
+      const pts = parseInt(row.dataset.pts);
+      const input = row.querySelector('input');
+      let qty = parseInt(input.value) || 0;
+      if (qty < 0) { qty = 0; input.value = 0; }
+      const sub = pts * qty;
+      row.querySelector('.row-subtotal').textContent = sub;
+      total += sub;
+    });
+
+    const pct = Math.round((total / NORM) * 100);
+
+    document.getElementById('scoreValue').textContent = total;
+    document.getElementById('scorePercent').textContent = pct + '% от нормы';
+
+    const panel = document.getElementById('scorePanel');
+    const fill  = document.getElementById('progressFill');
+    const badge = document.getElementById('levelBadge');
+
+    panel.className = 'score-panel';
+    fill.className  = 'progress-fill';
+
+    let level, cls;
+    if (total >= 150)      { level = 'Высокий уровень';  cls = 'green';  }
+    else if (total >= 70)  { level = 'Средний уровень';  cls = 'yellow'; }
+    else                   { level = 'Низкий уровень';   cls = 'red';    }
+
+    panel.classList.add('level-' + cls);
+    fill.classList.add(cls);
+    badge.textContent = level;
+
+    const barPct = Math.min((total / 200) * 100, 100);
+    fill.style.width = barPct + '%';
+  }
+
+  function resetAll() {
+    document.querySelectorAll('.row input').forEach(i => i.value = 0);
+    calc();
+  }
+
+  calc();
+</script>
+
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Коммерческая активность агента</title>
+<title>Калькулятор ежедневных коммерческих активностей агента</title>
 <style>
   :root {
     --green: #2e7d32;
@@ -17,6 +17,8 @@
     --light: #f4f5f7;
     --border: #e0e0e0;
     --white: #ffffff;
+    --blue: #1565c0;
+    --blue-bg: #e3f2fd;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -29,70 +31,65 @@
     padding: 16px;
   }
 
-  .container {
-    max-width: 720px;
-    margin: 0 auto;
-  }
+  .container { max-width: 760px; margin: 0 auto; }
 
-  /* ── Header ── */
   .header {
     background: var(--dark);
     color: var(--white);
-    padding: 24px 20px;
+    padding: 20px;
     border-radius: 12px;
     margin-bottom: 16px;
   }
-  .header h1 {
-    font-size: 20px;
-    font-weight: 700;
-    margin-bottom: 4px;
+  .header h1 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .header p { font-size: 12px; color: #b0b3c5; }
+
+  /* Mode toggle */
+  .mode-toggle {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
   }
-  .header p {
+  .mode-btn {
+    flex: 1;
+    padding: 12px 8px;
+    border: 2px solid var(--border);
+    background: var(--white);
+    border-radius: 10px;
     font-size: 13px;
-    color: #b0b3c5;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: all .2s;
+  }
+  .mode-btn.active {
+    border-color: var(--blue);
+    background: var(--blue-bg);
+    color: var(--blue);
   }
 
-  /* ── Score panel ── */
+  /* Score panel */
   .score-panel {
     background: var(--white);
     border-radius: 12px;
-    padding: 24px 20px;
+    padding: 20px;
     margin-bottom: 16px;
     box-shadow: 0 1px 4px rgba(0,0,0,.06);
     text-align: center;
-    transition: border-color .3s;
     border: 2px solid transparent;
+    transition: border-color .3s, background .3s;
   }
-  .score-panel.level-green  { border-color: var(--green);  background: var(--green-bg); }
-  .score-panel.level-yellow { border-color: var(--yellow); background: var(--yellow-bg); }
-  .score-panel.level-red    { border-color: var(--red);    background: var(--red-bg); }
+  .score-panel.zone-green  { border-color: var(--green);  background: var(--green-bg); }
+  .score-panel.zone-yellow { border-color: var(--yellow); background: var(--yellow-bg); }
+  .score-panel.zone-red    { border-color: var(--red);    background: var(--red-bg); }
 
-  .score-value {
-    font-size: 56px;
-    font-weight: 800;
-    line-height: 1;
-    transition: color .3s;
-  }
-  .score-panel.level-green  .score-value { color: var(--green); }
-  .score-panel.level-yellow .score-value { color: var(--yellow); }
-  .score-panel.level-red    .score-value { color: var(--red); }
+  .score-value { font-size: 52px; font-weight: 800; line-height: 1; transition: color .3s; }
+  .score-panel.zone-green  .score-value { color: var(--green); }
+  .score-panel.zone-yellow .score-value { color: var(--yellow); }
+  .score-panel.zone-red    .score-value { color: var(--red); }
 
-  .score-label {
-    font-size: 13px;
-    color: var(--gray);
-    margin-top: 4px;
-  }
+  .score-label { font-size: 13px; color: var(--gray); margin-top: 4px; }
 
-  .score-percent {
-    font-size: 15px;
-    font-weight: 600;
-    margin-top: 8px;
-  }
-  .score-panel.level-green  .score-percent { color: var(--green); }
-  .score-panel.level-yellow .score-percent { color: var(--yellow); }
-  .score-panel.level-red    .score-percent { color: var(--red); }
-
-  .level-badge {
+  .zone-badge {
     display: inline-block;
     margin-top: 10px;
     padding: 4px 16px;
@@ -101,19 +98,35 @@
     font-weight: 700;
     color: var(--white);
   }
-  .score-panel.level-green  .level-badge { background: var(--green); }
-  .score-panel.level-yellow .level-badge { background: var(--yellow); }
-  .score-panel.level-red    .level-badge { background: var(--red); }
+  .score-panel.zone-green  .zone-badge { background: var(--green); }
+  .score-panel.zone-yellow .zone-badge { background: var(--yellow); }
+  .score-panel.zone-red    .zone-badge { background: var(--red); }
 
-  /* ── Progress bar ── */
-  .progress-wrap {
-    margin-top: 16px;
+  .zone-legend {
+    display: flex;
+    gap: 6px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
   }
+  .zone-item {
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .zone-item.zg { background: var(--green-bg); color: var(--green); }
+  .zone-item.zy { background: var(--yellow-bg); color: var(--yellow); }
+  .zone-item.zr { background: var(--red-bg); color: var(--red); }
+
+  /* Progress bar */
+  .progress-wrap { margin-top: 14px; }
   .progress-bar {
     height: 14px;
     background: #e0e0e0;
     border-radius: 7px;
     overflow: hidden;
+    position: relative;
   }
   .progress-fill {
     height: 100%;
@@ -121,9 +134,9 @@
     transition: width .4s ease, background .3s;
     width: 0%;
   }
-  .progress-fill.green  { background: var(--green); }
-  .progress-fill.yellow { background: var(--yellow); }
-  .progress-fill.red    { background: var(--red); }
+  .progress-fill.pf-green  { background: var(--green); }
+  .progress-fill.pf-yellow { background: var(--yellow); }
+  .progress-fill.pf-red    { background: var(--red); }
 
   .progress-marks {
     display: flex;
@@ -133,53 +146,50 @@
     margin-top: 4px;
   }
 
-  /* ── Sections ── */
+  /* Sections */
   .section {
     background: var(--white);
     border-radius: 12px;
-    padding: 20px;
+    padding: 18px;
     margin-bottom: 16px;
     box-shadow: 0 1px 4px rgba(0,0,0,.06);
   }
   .section h2 {
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 700;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
     padding-bottom: 8px;
     border-bottom: 2px solid var(--light);
   }
   .section h3 {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     color: var(--gray);
-    margin: 14px 0 8px;
+    margin: 12px 0 6px;
     text-transform: uppercase;
     letter-spacing: .5px;
   }
 
-  /* ── Input rows ── */
+  .section .note {
+    font-size: 12px;
+    color: var(--gray);
+    margin-bottom: 10px;
+    font-style: italic;
+  }
+
+  /* Rows */
   .row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 8px 0;
+    padding: 7px 0;
     border-bottom: 1px solid var(--light);
     gap: 8px;
   }
   .row:last-child { border-bottom: none; }
-
-  .row-info {
-    flex: 1;
-    min-width: 0;
-  }
-  .row-name {
-    font-size: 14px;
-    font-weight: 500;
-  }
-  .row-pts {
-    font-size: 12px;
-    color: var(--gray);
-  }
+  .row-info { flex: 1; min-width: 0; }
+  .row-name { font-size: 13px; font-weight: 500; }
+  .row-pts { font-size: 11px; color: var(--gray); }
 
   .row-input {
     display: flex;
@@ -189,58 +199,62 @@
   }
 
   .row-input input[type="number"] {
-    width: 56px;
-    padding: 6px 8px;
+    width: 52px;
+    padding: 5px 6px;
     border: 1px solid var(--border);
     border-radius: 8px;
-    font-size: 15px;
+    font-size: 14px;
     text-align: center;
     outline: none;
-    transition: border-color .2s;
     -moz-appearance: textfield;
   }
   .row-input input[type="number"]::-webkit-outer-spin-button,
   .row-input input[type="number"]::-webkit-inner-spin-button {
     -webkit-appearance: none;
-    margin: 0;
   }
-  .row-input input:focus {
-    border-color: var(--dark);
-  }
+  .row-input input:focus { border-color: var(--dark); }
 
   .row-subtotal {
-    width: 48px;
+    width: 44px;
     text-align: right;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 700;
-    color: var(--dark);
     flex-shrink: 0;
   }
+  .row-subtotal.penalty { color: var(--red); }
 
-  /* ── Stepper buttons ── */
-  .stepper {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
+  .stepper { display: flex; align-items: center; gap: 3px; }
   .stepper button {
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
     border: 1px solid var(--border);
     background: var(--white);
     border-radius: 8px;
-    font-size: 18px;
+    font-size: 16px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--dark);
     transition: background .15s;
-    flex-shrink: 0;
   }
   .stepper button:active { background: var(--light); }
 
-  /* ── Reset button ── */
+  /* Penalty checkbox row */
+  .penalty-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--light);
+  }
+  .penalty-row:last-child { border-bottom: none; }
+  .penalty-row label { flex: 1; font-size: 13px; font-weight: 500; cursor: pointer; }
+  .penalty-row .penalty-val { font-size: 13px; font-weight: 700; color: var(--red); flex-shrink: 0; }
+
+  /* Online hidden rows */
+  .online-hidden { display: none; }
+
+  /* Reset */
   .btn-reset {
     display: block;
     width: 100%;
@@ -252,118 +266,109 @@
     font-size: 15px;
     font-weight: 600;
     cursor: pointer;
-    transition: opacity .2s;
     margin-bottom: 16px;
   }
   .btn-reset:active { opacity: .8; }
 
-  /* ── Reference tables ── */
-  .ref-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-    margin-bottom: 8px;
-  }
-  .ref-table th {
-    text-align: left;
-    padding: 6px 8px;
-    background: var(--light);
-    font-weight: 600;
+  /* Info box */
+  .info-box {
+    background: var(--blue-bg);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 16px;
     font-size: 12px;
-    color: var(--gray);
-  }
-  .ref-table td {
-    padding: 6px 8px;
-    border-bottom: 1px solid var(--light);
-  }
-  .ref-table td:last-child {
-    text-align: right;
-    font-weight: 700;
-    white-space: nowrap;
-  }
-
-  /* ── Scale legend ── */
-  .scale-legend {
-    display: flex;
-    gap: 8px;
-    margin-top: 12px;
-    flex-wrap: wrap;
-  }
-  .scale-item {
-    flex: 1;
-    min-width: 100px;
-    padding: 10px 12px;
-    border-radius: 8px;
-    font-size: 12px;
-    font-weight: 600;
-    text-align: center;
-  }
-  .scale-item.sg { background: var(--green-bg); color: var(--green); }
-  .scale-item.sy { background: var(--yellow-bg); color: var(--yellow); }
-  .scale-item.sr { background: var(--red-bg); color: var(--red); }
-
-  .note {
-    font-size: 12px;
-    color: var(--gray);
-    margin-top: 8px;
+    color: var(--blue);
     line-height: 1.6;
   }
+  .info-box strong { display: block; margin-bottom: 4px; }
 
-  /* ── Mobile ── */
   @media (max-width: 480px) {
     body { padding: 10px; }
-    .header { padding: 18px 16px; }
-    .header h1 { font-size: 17px; }
-    .score-value { font-size: 44px; }
-    .section { padding: 16px; }
+    .header { padding: 16px; }
+    .header h1 { font-size: 16px; }
+    .score-value { font-size: 42px; }
+    .section { padding: 14px; }
     .row { flex-wrap: wrap; }
-    .row-info { min-width: 100%; margin-bottom: 4px; }
+    .row-info { min-width: 100%; margin-bottom: 3px; }
     .row-input { width: 100%; justify-content: space-between; }
-    .row-subtotal { width: auto; }
-    .stepper button { width: 36px; height: 36px; }
-    .row-input input[type="number"] { width: 64px; }
+    .stepper button { width: 34px; height: 34px; }
+    .row-input input[type="number"] { width: 58px; }
   }
 </style>
 </head>
 <body>
-
 <div class="container">
 
-  <!-- Header -->
   <div class="header">
-    <h1>Коммерческая активность агента</h1>
-    <p>Норма: 150 баллов / неделя (5 рабочих дней). Рейтинг обновляется каждый понедельник.</p>
+    <h1>Калькулятор ежедневных коммерческих активностей агента</h1>
+    <p>Баллы за день → зона → количество лидов на следующий день</p>
+  </div>
+
+  <!-- Mode toggle -->
+  <div class="mode-toggle">
+    <div class="mode-btn active" id="btnOffline" onclick="setMode('offline')">Оффлайн-агент</div>
+    <div class="mode-btn" id="btnOnline" onclick="setMode('online')">Онлайн-сотрудник</div>
   </div>
 
   <!-- Score panel -->
-  <div class="score-panel level-red" id="scorePanel">
+  <div class="score-panel zone-red" id="scorePanel">
     <div class="score-value" id="scoreValue">0</div>
-    <div class="score-label">баллов за неделю</div>
-    <div class="score-percent" id="scorePercent">0% от нормы</div>
-    <div class="level-badge" id="levelBadge">Низкий уровень</div>
+    <div class="score-label">баллов за день</div>
+    <div class="zone-badge" id="zoneBadge">Красная зона</div>
 
     <div class="progress-wrap">
       <div class="progress-bar">
-        <div class="progress-fill red" id="progressFill"></div>
+        <div class="progress-fill pf-red" id="progressFill"></div>
       </div>
       <div class="progress-marks">
         <span>0</span>
-        <span>70</span>
-        <span>150</span>
-        <span>200+</span>
+        <span>10</span>
+        <span>25</span>
+        <span>40+</span>
       </div>
     </div>
 
-    <div class="scale-legend">
-      <div class="scale-item sg">Зелёный: 150+</div>
-      <div class="scale-item sy">Жёлтый: 70–149</div>
-      <div class="scale-item sr">Красный: &lt; 70</div>
+    <div class="zone-legend">
+      <div class="zone-item zg">Зелёная: ≥ 25</div>
+      <div class="zone-item zy">Жёлтая: 10–24</div>
+      <div class="zone-item zr">Красная: &lt; 10</div>
     </div>
   </div>
 
-  <!-- Calculator: CRM (auto) -->
+  <!-- Penalties -->
   <div class="section">
-    <h2>Сделки (CRM считает автоматически)</h2>
+    <h2>Штрафы (автоматические)</h2>
+    <div class="penalty-row">
+      <input type="checkbox" id="chkOverdue" onchange="calc()">
+      <label for="chkOverdue">Есть просроченные задачи</label>
+      <span class="penalty-val">−50</span>
+    </div>
+    <div class="penalty-row">
+      <input type="checkbox" id="chkNoTasks" onchange="calc()">
+      <label for="chkNoTasks">Есть сделки без задач</label>
+      <span class="penalty-val">−30</span>
+    </div>
+  </div>
+
+  <!-- Automatic points -->
+  <div class="section">
+    <h2>Автоматические баллы (CRM)</h2>
+    <p class="note">Начисляются при движении по воронке. В калькуляторе — для ручного ввода.</p>
+
+    <div class="row" data-pts="15">
+      <div class="row-info">
+        <div class="row-name">Лид выявлен (перевод в «Сделки»)</div>
+        <div class="row-pts">15 баллов / шт.</div>
+      </div>
+      <div class="row-input">
+        <div class="stepper">
+          <button type="button" onclick="step(this,-1)">−</button>
+          <input type="number" min="0" value="0" oninput="calc()">
+          <button type="button" onclick="step(this,1)">+</button>
+        </div>
+        <div class="row-subtotal">0</div>
+      </div>
+    </div>
 
     <div class="row" data-pts="25">
       <div class="row-info">
@@ -426,9 +431,10 @@
     </div>
   </div>
 
-  <!-- Calculator: Manual (ROP) -->
-  <div class="section">
-    <h2>Дополнительные действия (вносит РОП)</h2>
+  <!-- Manual points: offline only -->
+  <div class="section" id="secManualOffline">
+    <h2>Ручные баллы (оффлайн)</h2>
+    <p class="note">Вносятся РОПом после проверки. В калькуляторе — для ручного ввода.</p>
 
     <div class="row" data-pts="5">
       <div class="row-info">
@@ -447,7 +453,7 @@
 
     <div class="row" data-pts="15">
       <div class="row-info">
-        <div class="row-name">Эксклюзивный договор заключён</div>
+        <div class="row-name">Эксклюзивный договор</div>
         <div class="row-pts">15 баллов / шт.</div>
       </div>
       <div class="row-input">
@@ -537,7 +543,7 @@
 
     <div class="row" data-pts="75">
       <div class="row-info">
-        <div class="row-name">Реферал (сделка состоялась)</div>
+        <div class="row-name">Привлечение клиента (реферальная программа)</div>
         <div class="row-pts">75 баллов / шт.</div>
       </div>
       <div class="row-input">
@@ -566,78 +572,158 @@
     </div>
   </div>
 
+  <!-- Manual points: online only -->
+  <div class="section" id="secManualOnline" style="display:none;">
+    <h2>Ручные баллы (онлайн)</h2>
+    <p class="note">Урезанный список для онлайн-сотрудников. Вносятся РОПом после проверки.</p>
+
+    <div class="row" data-pts="10">
+      <div class="row-info">
+        <div class="row-name">Онлайн-презентация Черноморского побережья</div>
+        <div class="row-pts">10 баллов / шт.</div>
+      </div>
+      <div class="row-input">
+        <div class="stepper">
+          <button type="button" onclick="step(this,-1)">−</button>
+          <input type="number" min="0" value="0" oninput="calc()">
+          <button type="button" onclick="step(this,1)">+</button>
+        </div>
+        <div class="row-subtotal">0</div>
+      </div>
+    </div>
+
+    <div class="row" data-pts="5">
+      <div class="row-info">
+        <div class="row-name">Публикация статуса в соцсетях</div>
+        <div class="row-pts">5 баллов / шт.</div>
+      </div>
+      <div class="row-input">
+        <div class="stepper">
+          <button type="button" onclick="step(this,-1)">−</button>
+          <input type="number" min="0" value="0" oninput="calc()">
+          <button type="button" onclick="step(this,1)">+</button>
+        </div>
+        <div class="row-subtotal">0</div>
+      </div>
+    </div>
+
+    <div class="row" data-pts="75">
+      <div class="row-info">
+        <div class="row-name">Привлечение клиента (реферальная программа)</div>
+        <div class="row-pts">75 баллов / шт.</div>
+      </div>
+      <div class="row-input">
+        <div class="stepper">
+          <button type="button" onclick="step(this,-1)">−</button>
+          <input type="number" min="0" value="0" oninput="calc()">
+          <button type="button" onclick="step(this,1)">+</button>
+        </div>
+        <div class="row-subtotal">0</div>
+      </div>
+    </div>
+
+    <div class="row" data-pts="100">
+      <div class="row-info">
+        <div class="row-name">Привлечение сотрудника в компанию</div>
+        <div class="row-pts">100 баллов / шт.</div>
+      </div>
+      <div class="row-input">
+        <div class="stepper">
+          <button type="button" onclick="step(this,-1)">−</button>
+          <input type="number" min="0" value="0" oninput="calc()">
+          <button type="button" onclick="step(this,1)">+</button>
+        </div>
+        <div class="row-subtotal">0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Info -->
+  <div class="info-box">
+    <strong>Как это работает</strong>
+    1. Агент заполняет отчёт в конце дня через автоматизацию Битрикса.<br>
+    2. Отчёт приходит РОПу на согласование.<br>
+    3. РОП подтверждает → баллы зачисляются. Отклоняет → уведомление агенту.<br>
+    4. Зона за предыдущий день определяет количество лидов на следующий день.<br>
+    5. Категория агента (по задаткам за квартал) определяет качество лидов.
+  </div>
+
   <!-- Reset -->
   <button class="btn-reset" onclick="resetAll()">Сбросить</button>
-
-  <!-- Reference -->
-  <div class="section">
-    <h2>Справка: как работает система</h2>
-    <p class="note">
-      1. В течение недели агент двигает сделки и выполняет дополнительные действия.<br>
-      2. В понедельник система суммирует баллы за прошлую неделю.<br>
-      3. Определяется уровень: зелёный (150+), жёлтый (70–149), красный (&lt; 70).<br>
-      4. Баллы начисляются один раз за этап. Если сделка сорвалась — баллы не сгорают.<br>
-      5. Баллы за дополнительные действия вносит РОП после проверки.
-    </p>
-  </div>
 
 </div>
 
 <script>
-  const NORM = 150;
+let currentMode = 'offline';
 
-  function step(btn, dir) {
-    const input = btn.parentElement.querySelector('input');
-    let v = parseInt(input.value) || 0;
-    v = Math.max(0, v + dir);
-    input.value = v;
-    calc();
-  }
-
-  function calc() {
-    let total = 0;
-    document.querySelectorAll('.row').forEach(row => {
-      const pts = parseInt(row.dataset.pts);
-      const input = row.querySelector('input');
-      let qty = parseInt(input.value) || 0;
-      if (qty < 0) { qty = 0; input.value = 0; }
-      const sub = pts * qty;
-      row.querySelector('.row-subtotal').textContent = sub;
-      total += sub;
-    });
-
-    const pct = Math.round((total / NORM) * 100);
-
-    document.getElementById('scoreValue').textContent = total;
-    document.getElementById('scorePercent').textContent = pct + '% от нормы';
-
-    const panel = document.getElementById('scorePanel');
-    const fill  = document.getElementById('progressFill');
-    const badge = document.getElementById('levelBadge');
-
-    panel.className = 'score-panel';
-    fill.className  = 'progress-fill';
-
-    let level, cls;
-    if (total >= 150)      { level = 'Высокий уровень';  cls = 'green';  }
-    else if (total >= 70)  { level = 'Средний уровень';  cls = 'yellow'; }
-    else                   { level = 'Низкий уровень';   cls = 'red';    }
-
-    panel.classList.add('level-' + cls);
-    fill.classList.add(cls);
-    badge.textContent = level;
-
-    const barPct = Math.min((total / 200) * 100, 100);
-    fill.style.width = barPct + '%';
-  }
-
-  function resetAll() {
-    document.querySelectorAll('.row input').forEach(i => i.value = 0);
-    calc();
-  }
-
+function setMode(mode) {
+  currentMode = mode;
+  document.getElementById('btnOffline').classList.toggle('active', mode === 'offline');
+  document.getElementById('btnOnline').classList.toggle('active', mode === 'online');
+  document.getElementById('secManualOffline').style.display = mode === 'offline' ? 'block' : 'none';
+  document.getElementById('secManualOnline').style.display = mode === 'online' ? 'block' : 'none';
   calc();
-</script>
+}
 
+function step(btn, dir) {
+  const input = btn.parentElement.querySelector('input');
+  let v = parseInt(input.value) || 0;
+  v = Math.max(0, v + dir);
+  input.value = v;
+  calc();
+}
+
+function calc() {
+  let total = 0;
+
+  // Count all visible rows
+  document.querySelectorAll('.row').forEach(row => {
+    // Skip hidden rows
+    const parent = row.closest('.section');
+    if (parent && parent.style.display === 'none') return;
+
+    const pts = parseInt(row.dataset.pts);
+    const input = row.querySelector('input');
+    let qty = parseInt(input.value) || 0;
+    if (qty < 0) { qty = 0; input.value = 0; }
+    const sub = pts * qty;
+    row.querySelector('.row-subtotal').textContent = sub;
+    total += sub;
+  });
+
+  // Penalties
+  if (document.getElementById('chkOverdue').checked) total -= 50;
+  if (document.getElementById('chkNoTasks').checked) total -= 30;
+
+  // Zone
+  let zone, zoneName, cls;
+  if (total >= 25) {
+    zone = 'green'; zoneName = 'Зелёная зона'; cls = 'zone-green';
+  } else if (total >= 10) {
+    zone = 'yellow'; zoneName = 'Жёлтая зона'; cls = 'zone-yellow';
+  } else {
+    zone = 'red'; zoneName = 'Красная зона'; cls = 'zone-red';
+  }
+
+  const panel = document.getElementById('scorePanel');
+  panel.className = 'score-panel ' + cls;
+  document.getElementById('scoreValue').textContent = total;
+  document.getElementById('zoneBadge').textContent = zoneName;
+
+  const fill = document.getElementById('progressFill');
+  fill.className = 'progress-fill pf-' + zone;
+  const pct = Math.min(Math.max(total, 0) / 40 * 100, 100);
+  fill.style.width = pct + '%';
+}
+
+function resetAll() {
+  document.querySelectorAll('.row input').forEach(i => i.value = 0);
+  document.getElementById('chkOverdue').checked = false;
+  document.getElementById('chkNoTasks').checked = false;
+  calc();
+}
+
+calc();
+</script>
 </body>
 </html>

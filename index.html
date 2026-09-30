@@ -5,725 +5,167 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Калькулятор ежедневных коммерческих активностей агента</title>
 <style>
-  :root {
-    --green: #2e7d32;
-    --green-bg: #e8f5e9;
-    --yellow: #f9a825;
-    --yellow-bg: #fff8e1;
-    --red: #c62828;
-    --red-bg: #ffebee;
-    --dark: #1a1a2e;
-    --gray: #6b7280;
-    --light: #f4f5f7;
-    --border: #e0e0e0;
-    --white: #ffffff;
-    --blue: #1565c0;
-    --blue-bg: #e3f2fd;
-  }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    background: var(--light);
-    color: var(--dark);
-    line-height: 1.5;
-    padding: 16px;
-  }
-
-  .container { max-width: 760px; margin: 0 auto; }
-
-  .header {
-    background: var(--dark);
-    color: var(--white);
-    padding: 20px;
-    border-radius: 12px;
-    margin-bottom: 16px;
-  }
-  .header h1 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
-  .header p { font-size: 12px; color: #b0b3c5; }
-
-  /* Mode toggle */
-  .mode-toggle {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 16px;
-  }
-  .mode-btn {
-    flex: 1;
-    padding: 12px 8px;
-    border: 2px solid var(--border);
-    background: var(--white);
-    border-radius: 10px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    text-align: center;
-    transition: all .2s;
-  }
-  .mode-btn.active {
-    border-color: var(--blue);
-    background: var(--blue-bg);
-    color: var(--blue);
-  }
-
-  /* Score panel */
-  .score-panel {
-    background: var(--white);
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 16px;
-    box-shadow: 0 1px 4px rgba(0,0,0,.06);
-    text-align: center;
-    border: 2px solid transparent;
-    transition: border-color .3s, background .3s;
-  }
-  .score-panel.zone-green  { border-color: var(--green);  background: var(--green-bg); }
-  .score-panel.zone-yellow { border-color: var(--yellow); background: var(--yellow-bg); }
-  .score-panel.zone-red    { border-color: var(--red);    background: var(--red-bg); }
-
-  .score-value { font-size: 52px; font-weight: 800; line-height: 1; transition: color .3s; }
-  .score-panel.zone-green  .score-value { color: var(--green); }
-  .score-panel.zone-yellow .score-value { color: var(--yellow); }
-  .score-panel.zone-red    .score-value { color: var(--red); }
-
-  .score-label { font-size: 13px; color: var(--gray); margin-top: 4px; }
-
-  .zone-badge {
-    display: inline-block;
-    margin-top: 10px;
-    padding: 4px 16px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--white);
-  }
-  .score-panel.zone-green  .zone-badge { background: var(--green); }
-  .score-panel.zone-yellow .zone-badge { background: var(--yellow); }
-  .score-panel.zone-red    .zone-badge { background: var(--red); }
-
-  .zone-legend {
-    display: flex;
-    gap: 6px;
-    margin-top: 12px;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-  .zone-item {
-    padding: 6px 12px;
-    border-radius: 8px;
-    font-size: 11px;
-    font-weight: 600;
-  }
-  .zone-item.zg { background: var(--green-bg); color: var(--green); }
-  .zone-item.zy { background: var(--yellow-bg); color: var(--yellow); }
-  .zone-item.zr { background: var(--red-bg); color: var(--red); }
-
-  /* Progress bar */
-  .progress-wrap { margin-top: 14px; }
-  .progress-bar {
-    height: 14px;
-    background: #e0e0e0;
-    border-radius: 7px;
-    overflow: hidden;
-    position: relative;
-  }
-  .progress-fill {
-    height: 100%;
-    border-radius: 7px;
-    transition: width .4s ease, background .3s;
-    width: 0%;
-  }
-  .progress-fill.pf-green  { background: var(--green); }
-  .progress-fill.pf-yellow { background: var(--yellow); }
-  .progress-fill.pf-red    { background: var(--red); }
-
-  .progress-marks {
-    display: flex;
-    justify-content: space-between;
-    font-size: 11px;
-    color: var(--gray);
-    margin-top: 4px;
-  }
-
-  /* Sections */
-  .section {
-    background: var(--white);
-    border-radius: 12px;
-    padding: 18px;
-    margin-bottom: 16px;
-    box-shadow: 0 1px 4px rgba(0,0,0,.06);
-  }
-  .section h2 {
-    font-size: 14px;
-    font-weight: 700;
-    margin-bottom: 10px;
-    padding-bottom: 8px;
-    border-bottom: 2px solid var(--light);
-  }
-  .section h3 {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--gray);
-    margin: 12px 0 6px;
-    text-transform: uppercase;
-    letter-spacing: .5px;
-  }
-
-  .section .note {
-    font-size: 12px;
-    color: var(--gray);
-    margin-bottom: 10px;
-    font-style: italic;
-  }
-
-  /* Rows */
-  .row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 7px 0;
-    border-bottom: 1px solid var(--light);
-    gap: 8px;
-  }
-  .row:last-child { border-bottom: none; }
-  .row-info { flex: 1; min-width: 0; }
-  .row-name { font-size: 13px; font-weight: 500; }
-  .row-pts { font-size: 11px; color: var(--gray); }
-
-  .row-input {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-shrink: 0;
-  }
-
-  .row-input input[type="number"] {
-    width: 52px;
-    padding: 5px 6px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    font-size: 14px;
-    text-align: center;
-    outline: none;
-    -moz-appearance: textfield;
-  }
-  .row-input input[type="number"]::-webkit-outer-spin-button,
-  .row-input input[type="number"]::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-  }
-  .row-input input:focus { border-color: var(--dark); }
-
-  .row-subtotal {
-    width: 44px;
-    text-align: right;
-    font-size: 13px;
-    font-weight: 700;
-    flex-shrink: 0;
-  }
-  .row-subtotal.penalty { color: var(--red); }
-
-  .stepper { display: flex; align-items: center; gap: 3px; }
-  .stepper button {
-    width: 30px;
-    height: 30px;
-    border: 1px solid var(--border);
-    background: var(--white);
-    border-radius: 8px;
-    font-size: 16px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background .15s;
-  }
-  .stepper button:active { background: var(--light); }
-
-  /* Penalty checkbox row */
-  .penalty-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 7px 0;
-    border-bottom: 1px solid var(--light);
-  }
-  .penalty-row:last-child { border-bottom: none; }
-  .penalty-row label { flex: 1; font-size: 13px; font-weight: 500; cursor: pointer; }
-  .penalty-row .penalty-val { font-size: 13px; font-weight: 700; color: var(--red); flex-shrink: 0; }
-
-  /* Online hidden rows */
-  .online-hidden { display: none; }
-
-  /* Reset */
-  .btn-reset {
-    display: block;
-    width: 100%;
-    padding: 14px;
-    background: var(--dark);
-    color: var(--white);
-    border: none;
-    border-radius: 10px;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    margin-bottom: 16px;
-  }
-  .btn-reset:active { opacity: .8; }
-
-  /* Info box */
-  .info-box {
-    background: var(--blue-bg);
-    border-radius: 10px;
-    padding: 14px;
-    margin-bottom: 16px;
-    font-size: 12px;
-    color: var(--blue);
-    line-height: 1.6;
-  }
-  .info-box strong { display: block; margin-bottom: 4px; }
-
-  @media (max-width: 480px) {
-    body { padding: 10px; }
-    .header { padding: 16px; }
-    .header h1 { font-size: 16px; }
-    .score-value { font-size: 42px; }
-    .section { padding: 14px; }
-    .row { flex-wrap: wrap; }
-    .row-info { min-width: 100%; margin-bottom: 3px; }
-    .row-input { width: 100%; justify-content: space-between; }
-    .stepper button { width: 34px; height: 34px; }
-    .row-input input[type="number"] { width: 58px; }
-  }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f4f6f8; margin: 0; padding: 20px; color: #222; }
+  .wrap { max-width: 900px; margin: 0 auto; background: #fff; border-radius: 10px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+  h1 { margin: 0 0 6px; font-size: 22px; color: #1f2937; }
+  .subtitle { color: #6b7280; margin-bottom: 24px; font-size: 14px; }
+  
+  .zone-bar { display: flex; gap: 10px; margin-bottom: 24px; flex-wrap: wrap; }
+  .zone { flex: 1; min-width: 140px; padding: 12px; border-radius: 8px; text-align: center; font-weight: 600; color: #fff; transition: all 0.2s; }
+  .zone.red { background: #e53935; }
+  .zone.yellow { background: #fbc02d; color: #333; }
+  .zone.green { background: #43a047; }
+  .zone.active { outline: 3px solid #1f6feb; outline-offset: 2px; transform: scale(1.02); }
+  
+  .block { border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 16px; background: #fafafa; }
+  .block h3 { margin: 0 0 4px; font-size: 16px; color: #111827; }
+  .block .note { font-size: 12px; color: #6b7280; margin-bottom: 12px; }
+  
+  .row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px dashed #e5e7eb; background: #fff; padding-left: 12px; padding-right: 12px; border-radius: 6px; margin-bottom: 4px; }
+  .row:last-child { border-bottom: none; margin-bottom: 0; }
+  .row .name { flex: 1; font-size: 14px; color: #374151; padding-right: 10px; }
+  .row .pts { width: 90px; text-align: right; color: #6b7280; font-size: 13px; font-weight: 500; white-space: nowrap; }
+  .row .ctrl { display: flex; align-items: center; gap: 10px; width: 130px; justify-content: flex-end; }
+  .row .ctrl button { width: 30px; height: 30px; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; cursor: pointer; font-weight: 700; font-size: 16px; color: #374151; display: flex; align-items: center; justify-content: center; }
+  .row .ctrl button:hover { background: #f3f4f6; border-color: #9ca3af; }
+  .row .ctrl .qty { width: 30px; text-align: center; font-weight: 700; font-size: 16px; color: #111827; }
+  
+  .total { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; background: #1f6feb; color: #fff; border-radius: 8px; margin-top: 20px; font-weight: 700; font-size: 18px; box-shadow: 0 4px 6px rgba(31, 111, 235, 0.2); }
+  
+  .reset { margin-top: 16px; width: 100%; padding: 12px; border: none; border-radius: 8px; background: #ef4444; color: #fff; font-weight: 600; cursor: pointer; font-size: 14px; transition: background 0.2s; }
+  .reset:hover { background: #dc2626; }
+  
+  .how { margin-top: 24px; font-size: 13px; color: #4b5563; background: #f9fafb; padding: 16px; border-radius: 8px; border: 1px solid #e5e7eb; }
+  .how b { display: block; margin-bottom: 8px; color: #111827; font-size: 14px; }
+  .how ol { margin: 0; padding-left: 20px; }
+  .how li { margin-bottom: 4px; }
 </style>
 </head>
 <body>
-<div class="container">
 
-  <div class="header">
-    <h1>Калькулятор ежедневных коммерческих активностей агента</h1>
-    <p>Баллы за день → зона → количество лидов на следующий день</p>
+<div class="wrap">
+  <h1>Калькулятор ежедневных коммерческих активностей агента</h1>
+  <div class="subtitle">Баллы за день → зона → количество лидов на следующий день</div>
+
+  <div class="zone-bar">
+    <div class="zone red" data-zone="red">Красная: &lt; 60</div>
+    <div class="zone yellow" data-zone="yellow">Жёлтая: 60–149</div>
+    <div class="zone green" data-zone="green">Зелёная: 150+</div>
   </div>
 
-  <!-- Mode toggle -->
-  <div class="mode-toggle">
-    <div class="mode-btn active" id="btnOffline" onclick="setMode('offline')">Оффлайн-агент</div>
-    <div class="mode-btn" id="btnOnline" onclick="setMode('online')">Онлайн-сотрудник</div>
+  <div class="block">
+    <h3>Автоматические баллы (CRM)</h3>
+    <div class="note">Начисляются при движении по воронке. В калькуляторе — для ручного ввода.</div>
+    <div id="autoRows"></div>
   </div>
 
-  <!-- Score panel -->
-  <div class="score-panel zone-red" id="scorePanel">
-    <div class="score-value" id="scoreValue">0</div>
-    <div class="score-label">баллов за день</div>
-    <div class="zone-badge" id="zoneBadge">Красная зона</div>
-
-    <div class="progress-wrap">
-      <div class="progress-bar">
-        <div class="progress-fill pf-red" id="progressFill"></div>
-      </div>
-      <div class="progress-marks">
-        <span>0</span>
-        <span>10</span>
-        <span>25</span>
-        <span>40+</span>
-      </div>
-    </div>
-
-    <div class="zone-legend">
-      <div class="zone-item zg">Зелёная: ≥ 25</div>
-      <div class="zone-item zy">Жёлтая: 10–24</div>
-      <div class="zone-item zr">Красная: &lt; 10</div>
-    </div>
+  <div class="block">
+    <h3>Ручные баллы (оффлайн)</h3>
+    <div class="note">Вносятся РОПом после проверки. В калькуляторе — для ручного ввода.</div>
+    <div id="offlineRows"></div>
   </div>
 
-  <!-- Penalties -->
-  <div class="section">
-    <h2>Штрафы (автоматические)</h2>
-    <div class="penalty-row">
-      <input type="checkbox" id="chkOverdue" onchange="calc()">
-      <label for="chkOverdue">Есть просроченные задачи</label>
-      <span class="penalty-val">−50</span>
-    </div>
-    <div class="penalty-row">
-      <input type="checkbox" id="chkNoTasks" onchange="calc()">
-      <label for="chkNoTasks">Есть сделки без задач</label>
-      <span class="penalty-val">−30</span>
-    </div>
+  <div class="total">
+    <span>Итого баллов за день:</span>
+    <span id="totalValue">0</span>
   </div>
 
-  <!-- Automatic points -->
-  <div class="section">
-    <h2>Автоматические баллы (CRM)</h2>
-    <p class="note">Начисляются при движении по воронке. В калькуляторе — для ручного ввода.</p>
+  <button class="reset" id="resetBtn">Сбросить показатели</button>
 
-    <div class="row" data-pts="15">
-      <div class="row-info">
-        <div class="row-name">Лид выявлен (перевод в «Сделки»)</div>
-        <div class="row-pts">15 баллов / шт.</div>
-      </div>
-      <div class="row-input">
-        <div class="stepper">
-          <button type="button" onclick="step(this,-1)">−</button>
-          <input type="number" min="0" value="0" oninput="calc()">
-          <button type="button" onclick="step(this,1)">+</button>
-        </div>
-        <div class="row-subtotal">0</div>
-      </div>
-    </div>
-
-    <div class="row" data-pts="25">
-      <div class="row-info">
-        <div class="row-name">Встреча проведена</div>
-        <div class="row-pts">25 баллов / шт.</div>
-      </div>
-      <div class="row-input">
-        <div class="stepper">
-          <button type="button" onclick="step(this,-1)">−</button>
-          <input type="number" min="0" value="0" oninput="calc()">
-          <button type="button" onclick="step(this,1)">+</button>
-        </div>
-        <div class="row-subtotal">0</div>
-      </div>
-    </div>
-
-    <div class="row" data-pts="50">
-      <div class="row-info">
-        <div class="row-name">Задаток / Бронь</div>
-        <div class="row-pts">50 баллов / шт.</div>
-      </div>
-      <div class="row-input">
-        <div class="stepper">
-          <button type="button" onclick="step(this,-1)">−</button>
-          <input type="number" min="0" value="0" oninput="calc()">
-          <button type="button" onclick="step(this,1)">+</button>
-        </div>
-        <div class="row-subtotal">0</div>
-      </div>
-    </div>
-
-    <div class="row" data-pts="75">
-      <div class="row-info">
-        <div class="row-name">Договор подписан</div>
-        <div class="row-pts">75 баллов / шт.</div>
-      </div>
-      <div class="row-input">
-        <div class="stepper">
-          <button type="button" onclick="step(this,-1)">−</button>
-          <input type="number" min="0" value="0" oninput="calc()">
-          <button type="button" onclick="step(this,1)">+</button>
-        </div>
-        <div class="row-subtotal">0</div>
-      </div>
-    </div>
-
-    <div class="row" data-pts="100">
-      <div class="row-info">
-        <div class="row-name">Сделка закрыта (успешно)</div>
-        <div class="row-pts">100 баллов / шт.</div>
-      </div>
-      <div class="row-input">
-        <div class="stepper">
-          <button type="button" onclick="step(this,-1)">−</button>
-          <input type="number" min="0" value="0" oninput="calc()">
-          <button type="button" onclick="step(this,1)">+</button>
-        </div>
-        <div class="row-subtotal">0</div>
-      </div>
-    </div>
+  <div class="how">
+    <b>Регламент работы</b>
+    <ol>
+      <li>Агент заполняет отчёт в конце дня через автоматизацию Битрикс24.</li>
+      <li>Отчёт приходит РОПу на согласование.</li>
+      <li>РОП подтверждает → баллы зачисляются. Отклоняет → уведомление агенту.</li>
+      <li>Зона за предыдущий день определяет количество лидов на следующий день.</li>
+      <li>Категория агента (по задаткам за квартал) определяет качество лидов.</li>
+    </ol>
   </div>
-
-  <!-- Manual points: offline only -->
-  <div class="section" id="secManualOffline">
-    <h2>Ручные баллы (оффлайн)</h2>
-    <p class="note">Вносятся РОПом после проверки. В калькуляторе — для ручного ввода.</p>
-
-    <div class="row" data-pts="5">
-      <div class="row-info">
-        <div class="row-name">Баннер (наклейка на объект)</div>
-        <div class="row-pts">5 баллов / шт.</div>
-      </div>
-      <div class="row-input">
-        <div class="stepper">
-          <button type="button" onclick="step(this,-1)">−</button>
-          <input type="number" min="0" value="0" oninput="calc()">
-          <button type="button" onclick="step(this,1)">+</button>
-        </div>
-        <div class="row-subtotal">0</div>
-      </div>
-    </div>
-
-    <div class="row" data-pts="15">
-      <div class="row-info">
-        <div class="row-name">Эксклюзивный договор</div>
-        <div class="row-pts">15 баллов / шт.</div>
-      </div>
-      <div class="row-input">
-        <div class="stepper">
-          <button type="button" onclick="step(this,-1)">−</button>
-          <input type="number" min="0" value="0" oninput="calc()">
-          <button type="button" onclick="step(this,1)">+</button>
-        </div>
-        <div class="row-subtotal">0</div>
-      </div>
-    </div>
-
-    <div class="row" data-pts="10">
-      <div class="row-info">
-        <div class="row-name">Снижение цены по эксклюзиву</div>
-        <div class="row-pts">10 баллов / шт.</div>
-      </div>
-      <div class="row-input">
-        <div class="stepper">
-          <button type="button" onclick="step(this,-1)">−</button>
-          <input type="number" min="0" value="0" oninput="calc()">
-          <button type="button" onclick="step(this,1)">+</button>
-        </div>
-        <div class="row-subtotal">0</div>
-      </div>
-    </div>
-
-    <div class="row" data-pts="10">
-      <div class="row-info">
-        <div class="row-name">Онлайн-презентация Черноморского побережья</div>
-        <div class="row-pts">10 баллов / шт.</div>
-      </div>
-      <div class="row-input">
-        <div class="stepper">
-          <button type="button" onclick="step(this,-1)">−</button>
-          <input type="number" min="0" value="0" oninput="calc()">
-          <button type="button" onclick="step(this,1)">+</button>
-        </div>
-        <div class="row-subtotal">0</div>
-      </div>
-    </div>
-
-    <div class="row" data-pts="10">
-      <div class="row-info">
-        <div class="row-name">Отзыв (2GIS / Яндекс)</div>
-        <div class="row-pts">10 баллов / шт.</div>
-      </div>
-      <div class="row-input">
-        <div class="stepper">
-          <button type="button" onclick="step(this,-1)">−</button>
-          <input type="number" min="0" value="0" oninput="calc()">
-          <button type="button" onclick="step(this,1)">+</button>
-        </div>
-        <div class="row-subtotal">0</div>
-      </div>
-    </div>
-
-    <div class="row" data-pts="10">
-      <div class="row-info">
-        <div class="row-name">Выездная презентация (брокер-тур)</div>
-        <div class="row-pts">10 баллов / шт.</div>
-      </div>
-      <div class="row-input">
-        <div class="stepper">
-          <button type="button" onclick="step(this,-1)">−</button>
-          <input type="number" min="0" value="0" oninput="calc()">
-          <button type="button" onclick="step(this,1)">+</button>
-        </div>
-        <div class="row-subtotal">0</div>
-      </div>
-    </div>
-
-    <div class="row" data-pts="5">
-      <div class="row-info">
-        <div class="row-name">Публикация статуса в соцсетях</div>
-        <div class="row-pts">5 баллов / шт.</div>
-      </div>
-      <div class="row-input">
-        <div class="stepper">
-          <button type="button" onclick="step(this,-1)">−</button>
-          <input type="number" min="0" value="0" oninput="calc()">
-          <button type="button" onclick="step(this,1)">+</button>
-        </div>
-        <div class="row-subtotal">0</div>
-      </div>
-    </div>
-
-    <div class="row" data-pts="75">
-      <div class="row-info">
-        <div class="row-name">Привлечение клиента (реферальная программа)</div>
-        <div class="row-pts">75 баллов / шт.</div>
-      </div>
-      <div class="row-input">
-        <div class="stepper">
-          <button type="button" onclick="step(this,-1)">−</button>
-          <input type="number" min="0" value="0" oninput="calc()">
-          <button type="button" onclick="step(this,1)">+</button>
-        </div>
-        <div class="row-subtotal">0</div>
-      </div>
-    </div>
-
-    <div class="row" data-pts="100">
-      <div class="row-info">
-        <div class="row-name">Привлечение сотрудника в компанию</div>
-        <div class="row-pts">100 баллов / шт.</div>
-      </div>
-      <div class="row-input">
-        <div class="stepper">
-          <button type="button" onclick="step(this,-1)">−</button>
-          <input type="number" min="0" value="0" oninput="calc()">
-          <button type="button" onclick="step(this,1)">+</button>
-        </div>
-        <div class="row-subtotal">0</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Manual points: online only -->
-  <div class="section" id="secManualOnline" style="display:none;">
-    <h2>Ручные баллы (онлайн)</h2>
-    <p class="note">Урезанный список для онлайн-сотрудников. Вносятся РОПом после проверки.</p>
-
-    <div class="row" data-pts="10">
-      <div class="row-info">
-        <div class="row-name">Онлайн-презентация Черноморского побережья</div>
-        <div class="row-pts">10 баллов / шт.</div>
-      </div>
-      <div class="row-input">
-        <div class="stepper">
-          <button type="button" onclick="step(this,-1)">−</button>
-          <input type="number" min="0" value="0" oninput="calc()">
-          <button type="button" onclick="step(this,1)">+</button>
-        </div>
-        <div class="row-subtotal">0</div>
-      </div>
-    </div>
-
-    <div class="row" data-pts="5">
-      <div class="row-info">
-        <div class="row-name">Публикация статуса в соцсетях</div>
-        <div class="row-pts">5 баллов / шт.</div>
-      </div>
-      <div class="row-input">
-        <div class="stepper">
-          <button type="button" onclick="step(this,-1)">−</button>
-          <input type="number" min="0" value="0" oninput="calc()">
-          <button type="button" onclick="step(this,1)">+</button>
-        </div>
-        <div class="row-subtotal">0</div>
-      </div>
-    </div>
-
-    <div class="row" data-pts="75">
-      <div class="row-info">
-        <div class="row-name">Привлечение клиента (реферальная программа)</div>
-        <div class="row-pts">75 баллов / шт.</div>
-      </div>
-      <div class="row-input">
-        <div class="stepper">
-          <button type="button" onclick="step(this,-1)">−</button>
-          <input type="number" min="0" value="0" oninput="calc()">
-          <button type="button" onclick="step(this,1)">+</button>
-        </div>
-        <div class="row-subtotal">0</div>
-      </div>
-    </div>
-
-    <div class="row" data-pts="100">
-      <div class="row-info">
-        <div class="row-name">Привлечение сотрудника в компанию</div>
-        <div class="row-pts">100 баллов / шт.</div>
-      </div>
-      <div class="row-input">
-        <div class="stepper">
-          <button type="button" onclick="step(this,-1)">−</button>
-          <input type="number" min="0" value="0" oninput="calc()">
-          <button type="button" onclick="step(this,1)">+</button>
-        </div>
-        <div class="row-subtotal">0</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Info -->
-  <div class="info-box">
-    <strong>Как это работает</strong>
-    1. Агент заполняет отчёт в конце дня через автоматизацию Битрикса.<br>
-    2. Отчёт приходит РОПу на согласование.<br>
-    3. РОП подтверждает → баллы зачисляются. Отклоняет → уведомление агенту.<br>
-    4. Зона за предыдущий день определяет количество лидов на следующий день.<br>
-    5. Категория агента (по задаткам за квартал) определяет качество лидов.
-  </div>
-
-  <!-- Reset -->
-  <button class="btn-reset" onclick="resetAll()">Сбросить</button>
-
 </div>
 
 <script>
-let currentMode = 'offline';
+const DATA = {
+  auto: [
+    { name: 'Лид выявлен (перевод в «Сделки»)', pts: 15 },
+    { name: 'Встреча проведена', pts: 25 },
+    { name: 'Задаток / Бронь', pts: 50 },
+    { name: 'Договор подписан', pts: 75 }
+  ],
+  offline: [
+    { name: 'Баннер (наклейка на объект)', pts: 5 },
+    { name: 'Эксклюзивный договор', pts: 15 },
+    { name: 'Онлайн-презентация Черноморского побережья', pts: 10 },
+    { name: 'Отзыв (2GIS / Яндекс)', pts: 10 },
+    { name: 'Выездная презентация (брокер-тур)', pts: 10 },
+    { name: 'Публикация статуса в соцсетях (ссылка/репост)', pts: 5 },
+    { name: 'Ипотечный брокер', pts: 20 },
+    { name: 'Страховка', pts: 15 },
+    { name: 'Ремонт', pts: 30 },
+    { name: 'Привлечение клиента (реферальная программа)', pts: 75 },
+    { name: 'Привлечение сотрудника в компанию', pts: 100 }
+  ]
+};
 
-function setMode(mode) {
-  currentMode = mode;
-  document.getElementById('btnOffline').classList.toggle('active', mode === 'offline');
-  document.getElementById('btnOnline').classList.toggle('active', mode === 'online');
-  document.getElementById('secManualOffline').style.display = mode === 'offline' ? 'block' : 'none';
-  document.getElementById('secManualOnline').style.display = mode === 'online' ? 'block' : 'none';
-  calc();
-}
-
-function step(btn, dir) {
-  const input = btn.parentElement.querySelector('input');
-  let v = parseInt(input.value) || 0;
-  v = Math.max(0, v + dir);
-  input.value = v;
-  calc();
-}
-
-function calc() {
-  let total = 0;
-
-  // Count all visible rows
-  document.querySelectorAll('.row').forEach(row => {
-    // Skip hidden rows
-    const parent = row.closest('.section');
-    if (parent && parent.style.display === 'none') return;
-
-    const pts = parseInt(row.dataset.pts);
-    const input = row.querySelector('input');
-    let qty = parseInt(input.value) || 0;
-    if (qty < 0) { qty = 0; input.value = 0; }
-    const sub = pts * qty;
-    row.querySelector('.row-subtotal').textContent = sub;
-    total += sub;
+function buildRows(containerId, list) {
+  const c = document.getElementById(containerId);
+  c.innerHTML = '';
+  list.forEach((item) => {
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML = `
+      <div class="name">${item.name}</div>
+      <div class="pts">${item.pts} б. / шт.</div>
+      <div class="ctrl">
+        <button class="dec">−</button>
+        <div class="qty">0</div>
+        <button class="inc">+</button>
+      </div>`;
+    row.dataset.pts = item.pts;
+    row.querySelector('.dec').onclick = () => changeQty(row, -1);
+    row.querySelector('.inc').onclick = () => changeQty(row, 1);
+    c.appendChild(row);
   });
+}
 
-  // Penalties
-  if (document.getElementById('chkOverdue').checked) total -= 50;
-  if (document.getElementById('chkNoTasks').checked) total -= 30;
+function changeQty(row, delta) {
+  const q = row.querySelector('.qty');
+  let v = parseInt(q.textContent, 10) + delta;
+  if (v < 0) v = 0;
+  q.textContent = v;
+  recalc();
+}
 
-  // Zone
-  let zone, zoneName, cls;
-  if (total >= 25) {
-    zone = 'green'; zoneName = 'Зелёная зона'; cls = 'zone-green';
-  } else if (total >= 10) {
-    zone = 'yellow'; zoneName = 'Жёлтая зона'; cls = 'zone-yellow';
+function recalc() {
+  let total = 0;
+  document.querySelectorAll('.row').forEach(r => {
+    total += parseInt(r.querySelector('.qty').textContent, 10) * parseInt(r.dataset.pts, 10);
+  });
+  
+  document.getElementById('totalValue').textContent = total;
+
+  document.querySelectorAll('.zone').forEach(z => z.classList.remove('active'));
+  
+  if (total < 60) {
+    document.querySelector('.zone.red').classList.add('active');
+  } else if (total < 150) {
+    document.querySelector('.zone.yellow').classList.add('active');
   } else {
-    zone = 'red'; zoneName = 'Красная зона'; cls = 'zone-red';
+    document.querySelector('.zone.green').classList.add('active');
   }
-
-  const panel = document.getElementById('scorePanel');
-  panel.className = 'score-panel ' + cls;
-  document.getElementById('scoreValue').textContent = total;
-  document.getElementById('zoneBadge').textContent = zoneName;
-
-  const fill = document.getElementById('progressFill');
-  fill.className = 'progress-fill pf-' + zone;
-  const pct = Math.min(Math.max(total, 0) / 40 * 100, 100);
-  fill.style.width = pct + '%';
 }
 
-function resetAll() {
-  document.querySelectorAll('.row input').forEach(i => i.value = 0);
-  document.getElementById('chkOverdue').checked = false;
-  document.getElementById('chkNoTasks').checked = false;
-  calc();
-}
+buildRows('autoRows', DATA.auto);
+buildRows('offlineRows', DATA.offline);
 
-calc();
+document.getElementById('resetBtn').onclick = () => {
+  document.querySelectorAll('.qty').forEach(q => q.textContent = 0);
+  recalc();
+};
+
+recalc();
 </script>
+
 </body>
 </html>

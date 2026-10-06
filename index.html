@@ -41,8 +41,15 @@
   .total { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; background: #1f6feb; color: #fff; border-radius: 8px; margin-top: 20px; font-weight: 700; font-size: 18px; box-shadow: 0 4px 6px rgba(31, 111, 235, 0.2); }
   .total.negative { background: #e53935; }
   
-  .reset { margin-top: 16px; width: 100%; padding: 12px; border: none; border-radius: 8px; background: #ef4444; color: #fff; font-weight: 600; cursor: pointer; font-size: 14px; transition: background 0.2s; }
-  .reset:hover { background: #dc2626; }
+  .actions { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+  .btn { flex: 1; min-width: 180px; padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; transition: all 0.2s; color: #fff; }
+  .btn-download { background: #10b981; }
+  .btn-download:hover { background: #059669; }
+  .btn-copy { background: #6366f1; }
+  .btn-copy:hover { background: #4f46e5; }
+  .btn-reset { background: #ef4444; }
+  .btn-reset:hover { background: #dc2626; }
+  .btn.copied { background: #059669 !important; }
   
   .how { margin-top: 24px; font-size: 13px; color: #4b5563; background: #f9fafb; padding: 16px; border-radius: 8px; border: 1px solid #e5e7eb; }
   .how b { display: block; margin-bottom: 8px; color: #111827; font-size: 14px; }
@@ -85,7 +92,11 @@
     <span id="totalValue">0</span>
   </div>
 
-  <button class="reset" id="resetBtn">Сбросить показатели</button>
+  <div class="actions">
+    <button class="btn btn-download" id="downloadBtn">📥 Скачать отчёт</button>
+    <button class="btn btn-copy" id="copyBtn">📋 Скопировать итог</button>
+    <button class="btn btn-reset" id="resetBtn"> Сбросить</button>
+  </div>
 
   <div class="how">
     <b>Регламент работы</b>
@@ -190,6 +201,12 @@ function changeQty(row, delta) {
   recalc();
 }
 
+function getZone(total) {
+  if (total < 60) return 'Красная';
+  if (total < 150) return 'Жёлтая';
+  return 'Зелёная';
+}
+
 function recalc() {
   let additions = 0;
   document.querySelectorAll('#autoRows .row, #offlineRows .row').forEach(r => {
@@ -224,9 +241,129 @@ function recalc() {
   }
 }
 
+// === Формирование текста отчёта (только строки с баллами) ===
+function generateReportText() {
+  const today = new Date().toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const lines = [];
+  
+  lines.push('ОТЧЁТ ПО КОММЕРЧЕСКИМ АКТИВНОСТЯМ АГЕНТА');
+  lines.push(`Дата: ${today}`);
+  lines.push('');
+  
+  // Автоматические баллы
+  const autoLines = [];
+  document.querySelectorAll('#autoRows .row').forEach(r => {
+    const qty = parseInt(r.querySelector('.qty').textContent, 10);
+    if (qty > 0) {
+      const pts = parseInt(r.dataset.pts, 10);
+      const name = r.querySelector('.name').textContent;
+      autoLines.push(`- ${name}: ${qty} шт. × ${pts} б. = ${qty * pts} б.`);
+    }
+  });
+  if (autoLines.length > 0) {
+    lines.push('АВТОМАТИЧЕСКИЕ БАЛЛЫ (CRM):');
+    lines.push(...autoLines);
+    lines.push('');
+  }
+  
+  // Ручные баллы
+  const offlineLines = [];
+  document.querySelectorAll('#offlineRows .row').forEach(r => {
+    const qty = parseInt(r.querySelector('.qty').textContent, 10);
+    if (qty > 0) {
+      const pts = parseInt(r.dataset.pts, 10);
+      const name = r.querySelector('.name').textContent;
+      offlineLines.push(`- ${name}: ${qty} шт. × ${pts} б. = ${qty * pts} б.`);
+    }
+  });
+  if (offlineLines.length > 0) {
+    lines.push('РУЧНЫЕ БАЛЛЫ (ОФФЛАЙН):');
+    lines.push(...offlineLines);
+    lines.push('');
+  }
+  
+  // Штрафы
+  const penaltyLines = [];
+  document.querySelectorAll('.penalty-check:checked').forEach(cb => {
+    const pts = parseInt(cb.dataset.val, 10);
+    const name = cb.parentElement.textContent.trim();
+    penaltyLines.push(`- ${name}: −${pts} б.`);
+  });
+  if (penaltyLines.length > 0) {
+    lines.push('АНТИАКТИВНОСТИ (ШТРАФЫ):');
+    lines.push(...penaltyLines);
+    lines.push('');
+  }
+  
+  // Итог
+  const total = parseInt(document.getElementById('totalValue').textContent, 10);
+  const zone = getZone(total);
+  lines.push('─'.repeat(40));
+  lines.push(`ИТОГО БАЛЛОВ ЗА ДЕНЬ: ${total}`);
+  lines.push(`ЗОНА: ${zone}`);
+  
+  return lines.join('\n');
+}
+
+// === Скачивание файла ===
+function downloadReport() {
+  const text = generateReportText();
+  const today = new Date().toISOString().slice(0, 10);
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `Ком_активности_${today}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// === Копирование в буфер ===
+function copyReport() {
+  const text = generateReportText();
+  const btn = document.getElementById('copyBtn');
+  
+  const doCopy = () => {
+    btn.textContent = '✓ Скопировано!';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = '📋 Скопировать итог';
+      btn.classList.remove('copied');
+    }, 2000);
+  };
+  
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(doCopy).catch(() => fallbackCopy(text, doCopy));
+  } else {
+    fallbackCopy(text, doCopy);
+  }
+}
+
+function fallbackCopy(text, callback) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.left = '-9999px';
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    document.execCommand('copy');
+    callback();
+  } catch (e) {
+    alert('Не удалось скопировать. Скопируйте вручную.');
+  }
+  document.body.removeChild(ta);
+}
+
+// === Инициализация ===
 buildRows('autoRows', DATA.auto);
 buildRows('offlineRows', DATA.offline);
 buildPenaltyRows('penaltyRows', PENALTIES);
+
+document.getElementById('downloadBtn').onclick = downloadReport;
+document.getElementById('copyBtn').onclick = copyReport;
 
 document.getElementById('resetBtn').onclick = () => {
   document.querySelectorAll('.qty').forEach(q => q.textContent = 0);

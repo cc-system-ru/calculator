@@ -7,9 +7,21 @@
 <style>
   * { box-sizing: border-box; }
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f4f6f8; margin: 0; padding: 20px; color: #222; }
-  .wrap { max-width: 960px; margin: 0 auto; background: #fff; border-radius: 10px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+  .wrap { max-width: 1000px; margin: 0 auto; background: #fff; border-radius: 10px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
   h1 { margin: 0 0 6px; font-size: 22px; color: #1f2937; }
-  .subtitle { color: #6b7280; margin-bottom: 24px; font-size: 14px; }
+  .subtitle { color: #6b7280; margin-bottom: 20px; font-size: 14px; }
+  
+  .header-info { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; background: #f9fafb; padding: 16px; border-radius: 8px; border: 1px solid #e5e7eb; }
+  .header-info .field { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 6px; }
+  .header-info label { font-size: 13px; font-weight: 600; color: #374151; }
+  .header-info input, .header-info select { padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; outline: none; transition: border 0.2s; }
+  .header-info input:focus, .header-info select:focus { border-color: #1f6feb; }
+
+  .tabs { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 2px solid #e5e7eb; }
+  .tab { padding: 10px 20px; cursor: pointer; font-weight: 600; color: #6b7280; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; }
+  .tab.active { color: #1f6feb; border-bottom-color: #1f6feb; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
   
   .zone-bar { display: flex; gap: 10px; margin-bottom: 24px; flex-wrap: wrap; }
   .zone { flex: 1; min-width: 140px; padding: 12px; border-radius: 8px; text-align: center; font-weight: 600; color: #fff; transition: all 0.2s; }
@@ -50,11 +62,15 @@
   .btn-reset { background: #ef4444; }
   .btn-reset:hover { background: #dc2626; }
   .btn.copied { background: #059669 !important; }
-  
-  .how { margin-top: 24px; font-size: 13px; color: #4b5563; background: #f9fafb; padding: 16px; border-radius: 8px; border: 1px solid #e5e7eb; }
-  .how b { display: block; margin-bottom: 8px; color: #111827; font-size: 14px; }
-  .how ol { margin: 0; padding-left: 20px; }
-  .how li { margin-bottom: 4px; }
+
+  .desc-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .desc-table th, .desc-table td { padding: 12px; text-align: left; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
+  .desc-table th { background: #f3f4f6; font-weight: 600; color: #374151; position: sticky; top: 0; }
+  .desc-table tr:hover { background: #f9fafb; }
+  .desc-table .col-name { width: 35%; color: #111827; font-weight: 500; }
+  .desc-table .col-pts { width: 10%; text-align: center; font-weight: 700; color: #1f6feb; }
+  .desc-table .col-desc { width: 55%; color: #4b5563; }
+  .desc-table .penalty-pts { color: #e53935; }
 </style>
 </head>
 <body>
@@ -63,92 +79,131 @@
   <h1>Калькулятор ежедневных коммерческих активностей агента</h1>
   <div class="subtitle">Баллы за день → зона → количество лидов на следующий день</div>
 
-  <div class="zone-bar">
-    <div class="zone red" data-zone="red">Красная: &lt; 60</div>
-    <div class="zone yellow" data-zone="yellow">Жёлтая: 60–149</div>
-    <div class="zone green" data-zone="green">Зелёная: 150+</div>
+  <div class="header-info">
+    <div class="field">
+      <label for="empName">ФИО сотрудника</label>
+      <input type="text" id="empName" placeholder="Введите ФИО">
+    </div>
+    <div class="field">
+      <label for="empDept">Отдел продаж</label>
+      <select id="empDept">
+        <option value="">Выберите отдел</option>
+        <option value="ОП 1 - Игори">ОП 1 - Игори</option>
+        <option value="ОП 2 - Виктория">ОП 2 - Виктория</option>
+        <option value="ОП 3 - Гульфия">ОП 3 - Гульфия</option>
+      </select>
+    </div>
   </div>
 
-  <div class="block">
-    <h3>Автоматические баллы (CRM)</h3>
-    <div class="note">Начисляются при движении по воронке. В калькуляторе — для ручного ввода.</div>
-    <div id="autoRows"></div>
+  <div class="tabs">
+    <div class="tab active" data-tab="calc">Калькулятор</div>
+    <div class="tab" data-tab="desc">Описание активностей</div>
   </div>
 
-  <div class="block">
-    <h3>Ручные баллы (оффлайн)</h3>
-    <div class="note">Вносятся РОПом после проверки. В калькуляторе — для ручного ввода.</div>
-    <div id="offlineRows"></div>
+  <div class="tab-content active" id="tab-calc">
+    <div class="zone-bar">
+      <div class="zone red" data-zone="red">Красная: &lt; 60</div>
+      <div class="zone yellow" data-zone="yellow">Жёлтая: 60–149</div>
+      <div class="zone green" data-zone="green">Зелёная: 150+</div>
+    </div>
+
+    <div class="block">
+      <h3>Автоматические баллы (CRM / Воронка)</h3>
+      <div class="note">Начисляются при движении по воронке. В калькуляторе — для ручного ввода.</div>
+      <div id="autoRows"></div>
+    </div>
+
+    <div class="block">
+      <h3>Ручные баллы (Оффлайн / Дополнительные)</h3>
+      <div class="note">Вносятся РОПом после проверки. В калькуляторе — для ручного ввода.</div>
+      <div id="offlineRows"></div>
+    </div>
+
+    <div class="block" style="background: #fff5f5; border-left: 4px solid #e53935;">
+      <h3 style="color: #c62828;">Антиактивности (Штрафы)</h3>
+      <div class="note">Вычитаются из итогового балла за день.</div>
+      <div id="penaltyRows"></div>
+    </div>
+
+    <div class="total" id="totalBlock">
+      <span>Итого баллов за день:</span>
+      <span id="totalValue">0</span>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-download" id="downloadBtn">📥 Скачать отчёт</button>
+      <button class="btn btn-copy" id="copyBtn">📋 Скопировать итог</button>
+      <button class="btn btn-reset" id="resetBtn">🗑 Сбросить</button>
+    </div>
   </div>
 
-  <div class="block" style="background: #fff5f5; border-left: 4px solid #e53935;">
-    <h3 style="color: #c62828;">Антиактивности (Штрафы)</h3>
-    <div class="note">Вычитаются из итогового балла за день.</div>
-    <div id="penaltyRows"></div>
-  </div>
-
-  <div class="total" id="totalBlock">
-    <span>Итого баллов за день:</span>
-    <span id="totalValue">0</span>
-  </div>
-
-  <div class="actions">
-    <button class="btn btn-download" id="downloadBtn">📥 Скачать отчёт</button>
-    <button class="btn btn-copy" id="copyBtn">📋 Скопировать итог</button>
-    <button class="btn btn-reset" id="resetBtn"> Сбросить</button>
-  </div>
-
-  <div class="how">
-    <b>Регламент работы</b>
-    <ol>
-      <li>Агент заполняет отчёт в конце дня через автоматизацию Битрикс24.</li>
-      <li>Отчёт приходит РОПу на согласование.</li>
-      <li>РОП подтверждает → баллы зачисляются. Отклоняет → уведомление агенту.</li>
-      <li>Зона за предыдущий день определяет количество лидов на следующий день.</li>
-      <li>Категория агента (по задаткам за квартал) определяет качество лидов.</li>
-    </ol>
+  <div class="tab-content" id="tab-desc">
+    <div class="block">
+      <h3>Условия начисления баллов и штрафов</h3>
+      <div class="note">Подробные требования к подтверждению каждой активности.</div>
+      <div style="max-height: 600px; overflow-y: auto;">
+        <table class="desc-table">
+          <thead>
+            <tr>
+              <th>Активность / Нарушение</th>
+              <th>Баллы</th>
+              <th>Условия начисления / Как подтвердить</th>
+            </tr>
+          </thead>
+          <tbody id="descTableBody"></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 </div>
 
 <script>
 const DATA = {
   auto: [
-    { name: 'Лид выявлен (перевод в «Сделки»)', pts: 15 },
-    { name: 'Офлайн встреча проведена', pts: 75 },
-    { name: 'Задаток / Бронь (вторичка)', pts: 75 },
-    { name: 'Задаток / Бронь (новостройка / эксклюзив)', pts: 100 },
-    { name: 'Задаток / Бронь (ДУ / повторный)', pts: 150 },
-    { name: 'Договор подписан', pts: 75 },
-    { name: 'Эксклюзивный договор подписан', pts: 50 }
+    { name: 'Новый лид', pts: 0, desc: 'Входящий лид без квалификации. Без баллов.' },
+    { name: 'Лид выявлен (ремонт, продажа, аренда, перевод в «Сделки»)', pts: 15, desc: '7 ключевых вопросов, утвердительный ответ на минимум 4. Подвязать через запись разговора.' },
+    { name: 'Встреча с собственником (иная встреча)', pts: 30, desc: 'Подтверждение в воронке: встреча + выполненное действие.' },
+    { name: 'Офлайн встреча проведена', pts: 75, desc: 'В воронке продаж поставить клиента в нужную воронку, автоматом зачтется как проведенная встреча.' },
+    { name: 'Онлайн встреча проведена', pts: 50, desc: 'В воронке продаж поставить клиента в нужную воронку, автоматом зачтется как проведенная встреча.' },
+    { name: 'Задаток / Бронь вторичка', pts: 75, desc: 'Подвязать в воронке чек и Акт осмотра. Заполнить данные по объекту, ФИО и контакты покупателя/продавца.' },
+    { name: 'Задаток / Бронь эксклюзив', pts: 100, desc: 'Подвязка оплаченных юр услуг.' },
+    { name: 'Задаток / Бронь (новостройка)', pts: 100, desc: 'Заполнить данные по объекту: ФИО и контакты менеджера, наименование СК и ЖК.' },
+    { name: 'Задаток / Бронь доверительное управление', pts: 150, desc: 'Объекты стоимостью более 10 млн.р.' },
+    { name: 'Повторный задаток/бронь с клиентом (LTV)', pts: 150, desc: 'Клиент, который уже покупал. Факт подтверждения — предыдущая сделка в CRM.' },
+    { name: 'Договор подписан', pts: 75, desc: 'Факт подписания договора.' },
+    { name: 'Эксклюзивный договор подписан', pts: 50, desc: 'Подвязать фото или PDF договора. РОП подтверждает актуальность галочкой в графе созвон с продавцом.' },
+    { name: 'Договор на аренду подписан', pts: 15, desc: 'Аренда квартиры, дома, коммерческого помещения.' }
   ],
   offline: [
-    { name: 'Онлайн-презентация Черноморского побережья', pts: 80 },
-    { name: 'Отзыв (2GIS / Яндекс)', pts: 15 },
-    { name: 'Выездная презентация (брокер-тур)', pts: 75 },
-    { name: 'Публикация статуса в соцсетях (ссылка/репост)', pts: 30 },
-    { name: 'Ипотечный брокер', pts: 50 },
-    { name: 'Ремонт', pts: 75 },
-    { name: 'Привлечение клиента (реферальная программа)', pts: 50 },
-    { name: 'Привлечение сотрудника в компанию', pts: 50 },
-    { name: 'Рассылка эксклюзивных договоров (30+ групп)', pts: 25 },
-    { name: 'Региональный чат (добавление партнера)', pts: 5 },
-    { name: 'Написать пост (профессиональный)', pts: 25 },
-    { name: 'Аренда', pts: 50 },
-    { name: 'Наставничество (стажёр сдал аттестацию)', pts: 100 },
-    { name: 'Проведение обучения (внутреннее)', pts: 50 },
-    { name: 'Снижение цены на эксклюзив (≥ 300 т.р.)', pts: 30 }
+    { name: 'Онлайн-презентация Черноморского побережья, Горнолыжные курорты', pts: 80, desc: 'Скрин презы, наименование ЖК/СК, Имя и контакты менеджера. Учитываются только комплексы с ДУ.' },
+    { name: 'Бронь доп. помещения (кладовка, парковка)', pts: 30, desc: 'Не учитываются парковки и кладовки по акции.' },
+    { name: 'Отзыв (2GIS / Яндекс)', pts: 15, desc: 'ФОТО или скриншот отзыва.' },
+    { name: 'Выездная презентация (брокер-тур)', pts: 75, desc: 'Наименование ЖК/СК, ФИО менеджера, общее фото на фоне ЖК или в офисе застройщика.' },
+    { name: 'Публикация статуса в соцсетях (ссылка/репост)', pts: 25, desc: 'Скрин. Только репосты постов компании или статус с ссылкой на соц. сети компании. 1 пост в одну соц. сеть.' },
+    { name: 'Привлечение клиента (реферальная программа)', pts: 75, desc: 'ФИО и контакты клиента, который рекомендовал.' },
+    { name: 'Привлечение сотрудника в компанию', pts: 100, desc: 'ФИО привлеченного сотрудника.' },
+    { name: 'Ремонт', pts: 75, desc: 'ФИО Клиента, Наименование компании, ФИО и контакты менеджера, размер комиссии, сроки, прогноз получения.' },
+    { name: 'Ипотечный брокер', pts: 50, desc: 'Заполнение граф: ФИО клиента, контакты, ФИО агента, стоимость услуги, дата подачи, банк, дата оплаты, сумма.' },
+    { name: 'Рассылка эксклюзивных договоров', pts: 25, desc: '30 групп минимум, все объекты действующие на момент рассылки по актуальным ценам.' },
+    { name: 'Региональный чат', pts: 5, desc: 'За каждого добавленного партнера (не более 20 партнеров в день наполнения среда).' },
+    { name: 'Передача клиента по региональной линии', pts: 50, desc: 'Подписание соглашения о сотрудничестве. Подвязать в CRM соглашение.' },
+    { name: 'Написать/Снять пост (профессиональный)', pts: 25, desc: 'После подтверждения службой качества. Подборка предложений, ипотечный пост, пост о рынке, видео обзор.' },
+    { name: 'Аренда (реализованная)', pts: 50, desc: 'Реализованная аренда (факт получения комиссии).' },
+    { name: 'Проведение обучения (внутреннее)', pts: 50, desc: 'Если агент обучает других сотрудников.' },
+    { name: 'Снижение цены на эксклюзив (≥ 300 т.р.)', pts: 30, desc: 'Факт снижения цены на объекте в эксклюзиве.' },
+    { name: 'Наставничество (сопровождение стажера)', pts: 100, desc: 'Наставник получает 100% баллов, если присутствовал со стажером на встрече, задатке, сделке.' }
   ]
 };
 
 const PENALTIES = [
-  { name: 'Просроченная задача', pts: 50 },
-  { name: 'Сделка без задачи', pts: 30 },
-  { name: 'Клиент не взят в работу за 10 мин', pts: 25 },
-  { name: 'Отказ клиента по вине агента', pts: 30 },
-  { name: 'Жалоба клиента', pts: 100 },
-  { name: 'Фейковая активность', pts: 200 },
-  { name: 'Не заполнены обязательные поля', pts: 15 },
-  { name: 'Не начат рабочий день до 10:00', pts: 20 }
+  { name: 'Просроченная задача', pts: 50, desc: 'Автоматически по данным CRM.' },
+  { name: 'Сделка без задачи', pts: 30, desc: 'Автоматически по данным CRM.' },
+  { name: 'Клиент не взят в работу за 10 мин', pts: 25, desc: 'Автоматически по времени реакции.' },
+  { name: 'Отказ клиента по вине агента', pts: 30, desc: 'Проверяется РОПом.' },
+  { name: 'Жалоба клиента', pts: 100, desc: 'Проверяется Службой качества.' },
+  { name: 'Фейковая активность', pts: 200, desc: 'Служба качества. Дополнительно: блокировка на срок по усмотрению руководителя.' },
+  { name: 'Не заполнены обязательные поля', pts: 15, desc: 'Автоматически по данным CRM.' },
+  { name: 'Не начат рабочий день до 10:00', pts: 20, desc: 'Автоматически по времени первого действия.' }
 ];
 
 function buildRows(containerId, list) {
@@ -188,9 +243,30 @@ function buildPenaltyRows(containerId, list) {
       <div class="pts">−${item.pts}</div>`;
     c.appendChild(row);
   });
-  document.querySelectorAll('.penalty-check').forEach(cb => {
-    cb.onchange = recalc;
-  });
+  document.querySelectorAll('.penalty-check').forEach(cb => cb.onchange = recalc);
+}
+
+function buildDescriptionTable() {
+  const tbody = document.getElementById('descTableBody');
+  tbody.innerHTML = '';
+  
+  const addSection = (title, items, isPenalty = false) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td colspan="3" style="background:#f3f4f6; font-weight:700; color:#111827; font-size:15px;">${title}</td>`;
+    tbody.appendChild(tr);
+    items.forEach(item => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td class="col-name">${item.name}</td>
+        <td class="col-pts ${isPenalty ? 'penalty-pts' : ''}">${isPenalty ? '−' : ''}${item.pts}</td>
+        <td class="col-desc">${item.desc}</td>`;
+      tbody.appendChild(row);
+    });
+  };
+
+  addSection('Автоматические баллы (CRM / Воронка)', DATA.auto);
+  addSection('Ручные баллы (Оффлайн / Дополнительные)', DATA.offline);
+  addSection('Антиактивности (Штрафы)', PENALTIES, true);
 }
 
 function changeQty(row, delta) {
@@ -224,40 +300,36 @@ function recalc() {
   const totalBlock = document.getElementById('totalBlock');
   totalEl.textContent = total;
 
-  if (total < 0) {
-    totalBlock.classList.add('negative');
-  } else {
-    totalBlock.classList.remove('negative');
-  }
+  if (total < 0) totalBlock.classList.add('negative');
+  else totalBlock.classList.remove('negative');
 
   document.querySelectorAll('.zone').forEach(z => z.classList.remove('active'));
-  
-  if (total < 60) {
-    document.querySelector('.zone.red').classList.add('active');
-  } else if (total < 150) {
-    document.querySelector('.zone.yellow').classList.add('active');
-  } else {
-    document.querySelector('.zone.green').classList.add('active');
-  }
+  if (total < 60) document.querySelector('.zone.red').classList.add('active');
+  else if (total < 150) document.querySelector('.zone.yellow').classList.add('active');
+  else document.querySelector('.zone.green').classList.add('active');
 }
 
-// === Формирование текста отчёта (только строки с баллами) ===
 function generateReportText() {
   const today = new Date().toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const empName = document.getElementById('empName').value.trim() || 'Имя не указано';
+  const empDept = document.getElementById('empDept').value || 'Отдел не выбран';
   const lines = [];
   
   lines.push('ОТЧЁТ ПО КОММЕРЧЕСКИМ АКТИВНОСТЯМ АГЕНТА');
-  lines.push(`Дата: ${today}`);
+  lines.push(`Дата: ${today} | Сотрудник: ${empName} | Отдел продаж: ${empDept}`);
   lines.push('');
   
-  // Автоматические баллы
   const autoLines = [];
   document.querySelectorAll('#autoRows .row').forEach(r => {
     const qty = parseInt(r.querySelector('.qty').textContent, 10);
     if (qty > 0) {
       const pts = parseInt(r.dataset.pts, 10);
       const name = r.querySelector('.name').textContent;
-      autoLines.push(`- ${name}: ${qty} шт. × ${pts} б. = ${qty * pts} б.`);
+      if (pts === 0) {
+        autoLines.push(`- ${name}: ${qty} шт.`);
+      } else {
+        autoLines.push(`- ${name}: ${qty} шт. × ${pts} б. = ${qty * pts} б.`);
+      }
     }
   });
   if (autoLines.length > 0) {
@@ -266,7 +338,6 @@ function generateReportText() {
     lines.push('');
   }
   
-  // Ручные баллы
   const offlineLines = [];
   document.querySelectorAll('#offlineRows .row').forEach(r => {
     const qty = parseInt(r.querySelector('.qty').textContent, 10);
@@ -282,7 +353,6 @@ function generateReportText() {
     lines.push('');
   }
   
-  // Штрафы
   const penaltyLines = [];
   document.querySelectorAll('.penalty-check:checked').forEach(cb => {
     const pts = parseInt(cb.dataset.val, 10);
@@ -295,7 +365,6 @@ function generateReportText() {
     lines.push('');
   }
   
-  // Итог
   const total = parseInt(document.getElementById('totalValue').textContent, 10);
   const zone = getZone(total);
   lines.push('─'.repeat(40));
@@ -305,7 +374,6 @@ function generateReportText() {
   return lines.join('\n');
 }
 
-// === Скачивание файла ===
 function downloadReport() {
   const text = generateReportText();
   const today = new Date().toISOString().slice(0, 10);
@@ -320,51 +388,43 @@ function downloadReport() {
   URL.revokeObjectURL(url);
 }
 
-// === Копирование в буфер ===
 function copyReport() {
   const text = generateReportText();
   const btn = document.getElementById('copyBtn');
-  
   const doCopy = () => {
     btn.textContent = '✓ Скопировано!';
     btn.classList.add('copied');
-    setTimeout(() => {
-      btn.textContent = '📋 Скопировать итог';
-      btn.classList.remove('copied');
-    }, 2000);
+    setTimeout(() => { btn.textContent = '📋 Скопировать итог'; btn.classList.remove('copied'); }, 2000);
   };
-  
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(doCopy).catch(() => fallbackCopy(text, doCopy));
-  } else {
-    fallbackCopy(text, doCopy);
-  }
+  } else { fallbackCopy(text, doCopy); }
 }
 
 function fallbackCopy(text, callback) {
   const ta = document.createElement('textarea');
-  ta.value = text;
-  ta.style.position = 'fixed';
-  ta.style.left = '-9999px';
-  document.body.appendChild(ta);
-  ta.select();
-  try {
-    document.execCommand('copy');
-    callback();
-  } catch (e) {
-    alert('Не удалось скопировать. Скопируйте вручную.');
-  }
+  ta.value = text; ta.style.position = 'fixed'; ta.style.left = '-9999px';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); callback(); } catch (e) { alert('Не удалось скопировать.'); }
   document.body.removeChild(ta);
 }
 
-// === Инициализация ===
+document.querySelectorAll('.tab').forEach(t => {
+  t.onclick = () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById(`tab-${t.dataset.tab}`).classList.add('active');
+  };
+});
+
 buildRows('autoRows', DATA.auto);
 buildRows('offlineRows', DATA.offline);
 buildPenaltyRows('penaltyRows', PENALTIES);
+buildDescriptionTable();
 
 document.getElementById('downloadBtn').onclick = downloadReport;
 document.getElementById('copyBtn').onclick = copyReport;
-
 document.getElementById('resetBtn').onclick = () => {
   document.querySelectorAll('.qty').forEach(q => q.textContent = 0);
   document.querySelectorAll('.penalty-check').forEach(cb => cb.checked = false);
@@ -373,6 +433,5 @@ document.getElementById('resetBtn').onclick = () => {
 
 recalc();
 </script>
-
 </body>
 </html>

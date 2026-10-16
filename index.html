@@ -43,6 +43,12 @@
   .row .ctrl button:hover { background: #f3f4f6; border-color: #9ca3af; }
   .row .ctrl .qty { width: 30px; text-align: center; font-weight: 700; font-size: 16px; color: #111827; }
   
+  /* Стили для поля ввода суммы */
+  .row .sum-input { width: 140px; padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; font-weight: 600; text-align: right; outline: none; }
+  .row .sum-input:focus { border-color: #1f6feb; }
+  .row .sum-input::placeholder { color: #9ca3af; font-weight: 400; }
+  .row .sum-label { width: 90px; text-align: right; color: #6b7280; font-size: 13px; font-weight: 500; }
+  
   .penalty-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-bottom: 1px dashed #fecaca; background: #fff; border-radius: 6px; margin-bottom: 4px; }
   .penalty-row:last-child { border-bottom: none; margin-bottom: 0; }
   .penalty-row .name { flex: 1; font-size: 14px; color: #374151; }
@@ -161,6 +167,7 @@
 const DATA = {
   auto: [
     { name: 'Новый лид', pts: 0, desc: 'Входящий лид без квалификации. Без баллов.' },
+    { name: 'Заход денег', pts: 0, type: 'sum', desc: 'Факт поступления оплаты от клиента. Указывается сумма в рублях. На баллы не влияет.' },
     { name: 'Лид выявлен (ремонт, продажа, аренда, перевод в «Сделки»)', pts: 15, desc: '7 ключевых вопросов, утвердительный ответ на минимум 4. Подвязать через запись разговора.' },
     { name: 'Встреча с собственником (иная встреча)', pts: 30, desc: 'Подтверждение в воронке: встреча + выполненное действие.' },
     { name: 'Офлайн встреча проведена', pts: 75, desc: 'В воронке продаж поставить клиента в нужную воронку, автоматом зачтется как проведенная встреча.' },
@@ -206,23 +213,42 @@ const PENALTIES = [
   { name: 'Не начат рабочий день до 10:00', pts: 20, desc: 'Автоматически по времени первого действия.' }
 ];
 
+function formatMoney(value) {
+  if (!value || isNaN(value)) return '0';
+  return Number(value).toLocaleString('ru-RU');
+}
+
 function buildRows(containerId, list) {
   const c = document.getElementById(containerId);
   c.innerHTML = '';
   list.forEach((item) => {
     const row = document.createElement('div');
     row.className = 'row';
-    row.innerHTML = `
-      <div class="name">${item.name}</div>
-      <div class="pts">${item.pts} б. / шт.</div>
-      <div class="ctrl">
-        <button class="dec">−</button>
-        <div class="qty">0</div>
-        <button class="inc">+</button>
-      </div>`;
     row.dataset.pts = item.pts;
-    row.querySelector('.dec').onclick = () => changeQty(row, -1);
-    row.querySelector('.inc').onclick = () => changeQty(row, 1);
+    row.dataset.name = item.name;
+
+    if (item.type === 'sum') {
+      // Поле ввода суммы
+      row.innerHTML = `
+        <div class="name">${item.name}</div>
+        <div class="sum-label">сумма, ₽</div>
+        <div class="ctrl" style="width: 160px;">
+          <input type="number" class="sum-input" placeholder="0" min="0" step="1000">
+        </div>`;
+      row.querySelector('.sum-input').addEventListener('input', recalc);
+    } else {
+      // Стандартный счетчик
+      row.innerHTML = `
+        <div class="name">${item.name}</div>
+        <div class="pts">${item.pts} б. / шт.</div>
+        <div class="ctrl">
+          <button class="dec">−</button>
+          <div class="qty">0</div>
+          <button class="inc">+</button>
+        </div>`;
+      row.querySelector('.dec').onclick = () => changeQty(row, -1);
+      row.querySelector('.inc').onclick = () => changeQty(row, 1);
+    }
     c.appendChild(row);
   });
 }
@@ -256,9 +282,10 @@ function buildDescriptionTable() {
     tbody.appendChild(tr);
     items.forEach(item => {
       const row = document.createElement('tr');
+      const ptsDisplay = item.type === 'sum' ? 'сумма' : (isPenalty ? '−' : '') + item.pts;
       row.innerHTML = `
         <td class="col-name">${item.name}</td>
-        <td class="col-pts ${isPenalty ? 'penalty-pts' : ''}">${isPenalty ? '−' : ''}${item.pts}</td>
+        <td class="col-pts ${isPenalty ? 'penalty-pts' : ''}">${ptsDisplay}</td>
         <td class="col-desc">${item.desc}</td>`;
       tbody.appendChild(row);
     });
@@ -286,6 +313,8 @@ function getZone(total) {
 function recalc() {
   let additions = 0;
   document.querySelectorAll('#autoRows .row, #offlineRows .row').forEach(r => {
+    // Пропускаем sum-строки при подсчете баллов
+    if (r.querySelector('.sum-input')) return;
     additions += parseInt(r.querySelector('.qty').textContent, 10) * parseInt(r.dataset.pts, 10);
   });
   
@@ -319,12 +348,30 @@ function generateReportText() {
   lines.push(`Дата: ${today} | Сотрудник: ${empName} | Отдел продаж: ${empDept}`);
   lines.push('');
   
+  // Собираем заходы денег отдельно
+  const moneyLines = [];
+  document.querySelectorAll('#autoRows .row').forEach(r => {
+    const sumInput = r.querySelector('.sum-input');
+    if (sumInput) {
+      const val = parseFloat(sumInput.value);
+      if (val && val > 0) {
+        moneyLines.push(`- ${r.dataset.name}: ${formatMoney(val)} ₽`);
+      }
+    }
+  });
+  if (moneyLines.length > 0) {
+    lines.push('ЗАХОД ДЕНЕГ:');
+    lines.push(...moneyLines);
+    lines.push('');
+  }
+  
   const autoLines = [];
   document.querySelectorAll('#autoRows .row').forEach(r => {
+    if (r.querySelector('.sum-input')) return; // пропускаем sum
     const qty = parseInt(r.querySelector('.qty').textContent, 10);
     if (qty > 0) {
       const pts = parseInt(r.dataset.pts, 10);
-      const name = r.querySelector('.name').textContent;
+      const name = r.dataset.name;
       if (pts === 0) {
         autoLines.push(`- ${name}: ${qty} шт.`);
       } else {
@@ -343,7 +390,7 @@ function generateReportText() {
     const qty = parseInt(r.querySelector('.qty').textContent, 10);
     if (qty > 0) {
       const pts = parseInt(r.dataset.pts, 10);
-      const name = r.querySelector('.name').textContent;
+      const name = r.dataset.name;
       offlineLines.push(`- ${name}: ${qty} шт. × ${pts} б. = ${qty * pts} б.`);
     }
   });
@@ -427,6 +474,7 @@ document.getElementById('downloadBtn').onclick = downloadReport;
 document.getElementById('copyBtn').onclick = copyReport;
 document.getElementById('resetBtn').onclick = () => {
   document.querySelectorAll('.qty').forEach(q => q.textContent = 0);
+  document.querySelectorAll('.sum-input').forEach(i => i.value = '');
   document.querySelectorAll('.penalty-check').forEach(cb => cb.checked = false);
   recalc();
 };
